@@ -1,30 +1,30 @@
+module BanditGames
+
 using Random, Distributions
 
 
 Random.seed!(42)
 
-Base.@kwdef mutable struct BanditGame
-    name::String = "Multi-Arm Bandit Experiment"
+mutable struct BanditGame{DT<:Tuple{Vararg{Distribution}}}
+    name::String
     T::Int64
-    A::Tuple
+    A::DT
     ξ::Categorical
-    γ::Vector{Int8} = zeros(Int8, T)
-    sequence_of_rewards::Vector{Vector{Float64}} = [zeros(Float64, length(A)) for _ in 1:T]
-    cumulative_reward_per_arm::Vector{Float64} = zeros(Float64, length(A))
-    average_reward_per_arm::Vector{Float64} = zeros(Float64, length(A))
-    best_fixed_choice::Vector{Int8} = zeros(Int8, T)
-    cumulative_reward_fixed::Vector{Float64} = zeros(Float64, T)
-    average_reward_fixed::Vector{Float64} = zeros(Float64, T)   
-    best_dynamic_choice::Vector{Int8} = zeros(Int8, T)
-    cumulative_reward_dynamic::Vector{Float64} = zeros(Float64, T)
-    average_reward_dynamic::Vector{Float64} = zeros(Float64, T)
-    τ::Int64 = 0
+    γ::Vector{Int8}
+    sequence_of_rewards::Vector{Vector{Float64}}
+    cumulative_reward_per_arm::Vector{Float64}
+    average_reward_per_arm::Vector{Float64}
+    best_fixed_choice::Vector{Int8}
+    cumulative_reward_fixed::Vector{Float64}
+    average_reward_fixed::Vector{Float64}
+    best_dynamic_choice::Vector{Int8}
+    cumulative_reward_dynamic::Vector{Float64}
+    average_reward_dynamic::Vector{Float64}
+    τ::Int64
 
-    function BanditGame(T::Int64, A::Tuple, ξ::Categorical, name::String)
+    function BanditGame(T::Int64, A::DT, ξ::Categorical, name::String) where DT <: Tuple{Vararg{Distribution}}
         # Sanity Checks
-        (all(typeof(a) <: Distribution for a in A) 
-        && length(A)==ncategories(ξ)
-        ) || throw(ArgumentError("Error in construction"))
+        length(A) == ncategories(ξ) || throw(ArgumentError("Error in construction"))
         
         # Initialised values
         γ = zeros(Int8, T)
@@ -39,16 +39,18 @@ Base.@kwdef mutable struct BanditGame
         average_reward_dynamic = zeros(Float64, T)
         τ = 0
 
-        return new(name, T, A, ξ, γ, sequence_of_rewards, cumulative_reward_per_arm, average_reward_per_arm, 
-        best_fixed_choice, cumulative_reward_fixed, average_reward_fixed, 
-        best_dynamic_choice, cumulative_reward_dynamic, average_reward_dynamic, τ)
+        return new{DT}(name, T, A, ξ, γ, sequence_of_rewards,
+                       cumulative_reward_per_arm, average_reward_per_arm,
+                       best_fixed_choice, cumulative_reward_fixed, average_reward_fixed, 
+                       best_dynamic_choice, cumulative_reward_dynamic,
+                       average_reward_dynamic, τ)
     end
 end
 BanditGame(T::Int64, A::Tuple, ξ::Categorical) = BanditGame(T, A, ξ, "Multi-Arm Bandit Experiment")
 
 # Base.getindex(bandit::BanditGame, x::Int64) = getindex(bandit.A, x)
 
-function update_instance(bandit::BanditGame, action::Integer, reward_vector::Tuple)
+function update_instance(bandit::BanditGame, action::Integer, reward_vector::Vector)
     bandit.τ += 1
     i = bandit.τ
     bandit.γ[i] = action
@@ -66,7 +68,7 @@ function update_instance(bandit::BanditGame, action::Integer, reward_vector::Tup
 end
 
 function pull(bandit::BanditGame)
-    return Tuple(rand(bandit.A[i]) for i in 1:length(bandit.A)) 
+    return [rand(distrib) for distrib in bandit.A]
 end
 
 function run_step(bandit::BanditGame)
@@ -96,15 +98,29 @@ end
 
 
 function run(bandit::BanditGame)
-    println(bandit)
+    # println(bandit)
     for i in 1:bandit.T
         run_step(bandit)
-        println(bandit)
+        # println(bandit)
         #TODO update policy
     end
 
 end
 
+function reset!(bandit::BanditGame)
+    fill!(bandit.γ, 0)
+    foreach(x->fill!(x, 0), bandit.sequence_of_rewards)
+    fill!(bandit.cumulative_reward_per_arm, 0)
+    fill!(bandit.average_reward_per_arm, 0)
+    fill!(bandit.best_fixed_choice, 0)
+    fill!(bandit.cumulative_reward_fixed, 0)
+    fill!(bandit.average_reward_fixed, 0)
+    fill!(bandit.best_dynamic_choice, 0)
+    fill!(bandit.cumulative_reward_dynamic, 0)
+    fill!(bandit.average_reward_dynamic, 0)
+    bandit.τ = 0
+    return
+end
 
 game = BanditGame(10, (Normal(0.15, 0.7), Normal(0.54, 0.2), Normal(0.38, 0.5)), Distributions.Categorical([1/3, 1/3, 1/3]))
 ξ = Distributions.Categorical([1/3, 1/3, 1/3])
@@ -113,4 +129,5 @@ game = BanditGame(10, (Normal(0.15, 0.7), Normal(0.54, 0.2), Normal(0.38, 0.5)),
 
 # A = (Normal(2*Random.rand()-1, Random.rand()*1.5),
 #     Normal(2*Random.rand()-1, Random.rand()*1.5))
+
 
