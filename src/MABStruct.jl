@@ -79,7 +79,8 @@ module MABStructs
     function Base.show(io::IO, bandit::MABStruct)
         println(io, "$(bandit.name): Iteration $(bandit.τ) of $(bandit.T)")
         println(io, "Full Information Case")
-        println(io, "Policy: $(bandit.γ)")
+        println(io, "Policy: $(bandit.ξ)")
+        println(io, "Choice vector: $(bandit.γ)")
         println(io, "History of rewards: $(bandit.sequence_of_rewards)")
         println(io, "cumulative_reward_per_arm: $(bandit.cumulative_reward_per_arm)")
         println(io, "average_reward_per_arm: $(bandit.average_reward_per_arm)")
@@ -99,7 +100,7 @@ module MABStructs
             verbose && println(bandit)
             #TODO update policy
             probs(bandit.ξ) .= optimizer(bandit.ξ, bandit.sequence_of_rewards[τ]; kw_dict...)
-            println(sum(probs(bandit.ξ)))
+            @assert abs(sum(probs(bandit.ξ)) - 1.0 < 1e-10)
         end
         println("Game Terminated")
     end
