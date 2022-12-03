@@ -1,11 +1,11 @@
-module BanditGames
+module MABStructs
 
 using Random, Distributions
 
 
 Random.seed!(42)
 
-mutable struct BanditGame{DT<:Tuple{Vararg{Distribution}}}
+mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
     name::String
     T::Int64
     A::DT
@@ -22,7 +22,7 @@ mutable struct BanditGame{DT<:Tuple{Vararg{Distribution}}}
     average_reward_dynamic::Vector{Float64}
     τ::Int64
 
-    function BanditGame(T::Int64, A::DT, ξ::Categorical, name::String) where DT <: Tuple{Vararg{Distribution}}
+    function MABStruct(T::Int64, A::DT, ξ::Categorical, name::String) where DT <: Tuple{Vararg{Distribution}}
         # Sanity Checks
         length(A) == ncategories(ξ) || throw(ArgumentError("Error in construction"))
         
@@ -46,11 +46,11 @@ mutable struct BanditGame{DT<:Tuple{Vararg{Distribution}}}
                        average_reward_dynamic, τ)
     end
 end
-BanditGame(T::Int64, A::Tuple, ξ::Categorical) = BanditGame(T, A, ξ, "Multi-Arm Bandit Experiment")
+MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm Bandit Experiment")
 
 # Base.getindex(bandit::BanditGame, x::Int64) = getindex(bandit.A, x)
 
-function update_instance(bandit::BanditGame, action::Integer, reward_vector::Vector)
+function update_instance(bandit::MABStruct, action::Integer, reward_vector::Vector)
     bandit.τ += 1
     i = bandit.τ
     bandit.γ[i] = action
@@ -67,11 +67,11 @@ function update_instance(bandit::BanditGame, action::Integer, reward_vector::Vec
     return 
 end
 
-function pull(bandit::BanditGame)
+function pull(bandit::MABStruct)
     return [rand(distrib) for distrib in bandit.A]
 end
 
-function run_step(bandit::BanditGame)
+function run_step(bandit::MABStruct)
     #Sample an action from the policy distribution
     action = rand(bandit.ξ)
     reward_vector = pull(bandit)
@@ -81,7 +81,7 @@ end
 #TODO fix specific printing for full info case and partial info case
 #TODO figure out if we should use IO
 #TODO figure out print vs println (base.print vs base.show)
-function Base.show(io::IO, bandit::BanditGame)
+function Base.show(io::IO, bandit::MABStruct)
     println(io, "$(bandit.name): Iteration $(bandit.τ) of $(bandit.T)")
     println(io, "Full Information Case")
     println(io, "Policy: $(bandit.γ)")
@@ -97,7 +97,7 @@ function Base.show(io::IO, bandit::BanditGame)
 end
 
 
-function run(bandit::BanditGame)
+function run(bandit::MABStruct)
     # println(bandit)
     for i in 1:bandit.T
         run_step(bandit)
@@ -107,7 +107,7 @@ function run(bandit::BanditGame)
 
 end
 
-function reset!(bandit::BanditGame)
+function reset!(bandit::MABStruct)
     fill!(bandit.γ, 0)
     foreach(x->fill!(x, 0), bandit.sequence_of_rewards)
     fill!(bandit.cumulative_reward_per_arm, 0)
@@ -122,12 +122,4 @@ function reset!(bandit::BanditGame)
     return
 end
 
-game = BanditGame(10, (Normal(0.15, 0.7), Normal(0.54, 0.2), Normal(0.38, 0.5)), Distributions.Categorical([1/3, 1/3, 1/3]))
-ξ = Distributions.Categorical([1/3, 1/3, 1/3])
-# xi_0 = [1 / len(A) for _ in range(len(A))]  # Starting probability distribution
-# T = 10
-
-# A = (Normal(2*Random.rand()-1, Random.rand()*1.5),
-#     Normal(2*Random.rand()-1, Random.rand()*1.5))
-
-
+end  # module
