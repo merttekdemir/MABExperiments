@@ -91,8 +91,7 @@ module MABStructs
         println(io, "average_reward_dynamic: $(bandit.average_reward_dynamic)")
     end
 
-    #eta learning rate
-    #opt_params...
+    #TODO does it make sense to use a kw_dict
     function run!(bandit::MABStruct, optimizer::Function, verbose=false::Bool; kw_dict::Dict)
         # println(bandit)
         for τ in 1:bandit.T
