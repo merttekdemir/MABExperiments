@@ -50,7 +50,7 @@ MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm 
 
 # Base.getindex(bandit::BanditGame, x::Int64) = getindex(bandit.A, x)
 
-function update_instance(bandit::MABStruct, action::Integer, reward_vector::Vector)
+function update_instance!(bandit::MABStruct, action::Integer, reward_vector::Vector)
     bandit.τ += 1
     i = bandit.τ
     bandit.γ[i] = action
@@ -71,7 +71,7 @@ function pull(bandit::MABStruct)
     return [rand(distrib) for distrib in bandit.A]
 end
 
-function run_step(bandit::MABStruct)
+function run_step!(bandit::MABStruct)
     #Sample an action from the policy distribution
     action = rand(bandit.ξ)
     reward_vector = pull(bandit)
