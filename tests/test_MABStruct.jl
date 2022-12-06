@@ -14,17 +14,16 @@ game = M.MABStruct(10, A0, ξ)
     @testset "struct" begin
         # @inferred - this tests if the compiler predicted the same type as the returned one, so we can check for performance, u can check that with @code_warntype
         @test_throws ArgumentError M.MABStruct(10, A0, ξ0, "test_0") 
-        @test typeof(game.γ) == Vector{Int8} 
-        @test typeof(game.sequence_of_rewards) == Vector{Vector{Float64}} 
-        @test typeof(game.cumulative_reward_per_arm) == Vector{Float64} 
-        @test typeof(game.average_reward_per_arm) == Vector{Float64} 
-        @test typeof(game.best_fixed_choice) == Vector{Int8} 
-        @test typeof(game.cumulative_reward_fixed) == Vector{Float64} 
-        @test typeof(game.average_reward_fixed) == Vector{Float64} 
-        @test typeof(game.best_dynamic_choice) == Vector{Int8} 
-        @test typeof(game.cumulative_reward_dynamic) == Vector{Float64} 
-        @test typeof(game.average_reward_dynamic) == Vector{Float64} 
-        @test true
+        @test game.γ isa Vector{Int8} 
+        @test game.sequence_of_rewards isa Vector{Vector{Float64}} 
+        @test game.cumulative_reward_per_arm isa Vector{Float64} 
+        @test game.average_reward_per_arm isa Vector{Float64} 
+        @test game.best_fixed_choice isa Vector{Int8} 
+        @test game.cumulative_reward_fixed isa Vector{Float64} 
+        @test game.average_reward_fixed isa Vector{Float64} 
+        @test game.best_dynamic_choice isa Vector{Int8} 
+        @test game.cumulative_reward_dynamic isa Vector{Float64} 
+        @test game.average_reward_dynamic isa Vector{Float64} 
     end
 end
     @testset "update_instance!" begin

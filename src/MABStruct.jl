@@ -17,9 +17,11 @@ mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
     best_fixed_choice::Vector{Int8}
     cumulative_reward_fixed::Vector{Float64}
     average_reward_fixed::Vector{Float64}
+    regret_fixed::Vector{Float64}
     best_dynamic_choice::Vector{Int8}
     cumulative_reward_dynamic::Vector{Float64}
     average_reward_dynamic::Vector{Float64}
+    regret_dynamic::Vector{Float64}
     τ::Int64
 
     function MABStruct(T::Int64, A::DT, ξ::Categorical, name::String) where DT <: Tuple{Vararg{Distribution}}
@@ -34,16 +36,21 @@ mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
         best_fixed_choice = zeros(Int8, T)
         cumulative_reward_fixed = zeros(Float64, T)
         average_reward_fixed = zeros(Float64, T)
+        regret_fixed = zeros(Float64, T)
         best_dynamic_choice = zeros(Int8, T)
         cumulative_reward_dynamic = zeros(Float64, T)
         average_reward_dynamic = zeros(Float64, T)
+        regret_dynamic = zeros(Float64, T)
+
         τ = 0
 
         return new{DT}(name, T, A, ξ, γ, sequence_of_rewards,
                        cumulative_reward_per_arm, average_reward_per_arm,
-                       best_fixed_choice, cumulative_reward_fixed, average_reward_fixed, 
+                       best_fixed_choice, cumulative_reward_fixed, 
+                       average_reward_fixed, average_reward_fixed,
                        best_dynamic_choice, cumulative_reward_dynamic,
-                       average_reward_dynamic, τ)
+                       average_reward_dynamic, regret_dynamic,
+                    τ)
     end
 end
 MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm Bandit Experiment")
