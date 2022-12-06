@@ -15,6 +15,8 @@ game = M.MABStruct(10, A0, ξ)
         # @inferred - this tests if the compiler predicted the same type as the returned one, so we can check for performance, u can check that with @code_warntype
         @test_throws ArgumentError M.MABStruct(10, A0, ξ0, "test_0") 
         @test game.γ isa Vector{Int8} 
+        @test game.algorithm_reward isa Vector{Float64} 
+        @test game.algorithm_cumulative_reward isa Vector{Float64} 
         @test game.sequence_of_rewards isa Vector{Vector{Float64}} 
         @test game.cumulative_reward_per_arm isa Vector{Float64} 
         @test game.average_reward_per_arm isa Vector{Float64} 

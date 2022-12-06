@@ -11,6 +11,8 @@ mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
     A::DT
     ξ::Categorical
     γ::Vector{Int8}
+    algorithm_reward::Vector{Float64}
+    algorithm_cumulative_reward::Vector{Float64}
     sequence_of_rewards::Vector{Vector{Float64}}
     cumulative_reward_per_arm::Vector{Float64}
     average_reward_per_arm::Vector{Float64}
@@ -30,6 +32,8 @@ mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
         
         # Initialised values
         γ = zeros(Int8, T)
+        algorithm_reward = zeros(Float64, T)
+        algorithm_cumulative_reward = zeros(Float64, T)
         sequence_of_rewards = [zeros(Float64, length(A)) for _ in 1:T]
         cumulative_reward_per_arm = zeros(Float64, length(A))
         average_reward_per_arm = zeros(Float64, length(A))
@@ -44,10 +48,11 @@ mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
 
         τ = 0
 
-        return new{DT}(name, T, A, ξ, γ, sequence_of_rewards,
+        return new{DT}(name, T, A, ξ, γ, algorithm_reward,
+                       algorithm_cumulative_reward, sequence_of_rewards,
                        cumulative_reward_per_arm, average_reward_per_arm,
                        best_fixed_choice, cumulative_reward_fixed, 
-                       average_reward_fixed, average_reward_fixed,
+                       average_reward_fixed, regret_fixed,
                        best_dynamic_choice, cumulative_reward_dynamic,
                        average_reward_dynamic, regret_dynamic,
                     τ)
@@ -61,12 +66,15 @@ MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm 
         bandit.τ += 1
         i = bandit.τ
         bandit.γ[i] = action
+        bandit.algorithm_reward[i] = reward_vector[action]
+        bandit.algorithm_cumulative_reward[i] = bandit.algorithm_cumulative_reward[max(i-1, 1)] + reward_vector[action]
         bandit.sequence_of_rewards[i] .= reward_vector
         bandit.cumulative_reward_per_arm .+= reward_vector
         bandit.average_reward_per_arm .= bandit.cumulative_reward_per_arm ./ i
         bandit.best_fixed_choice[i] = argmax(bandit.cumulative_reward_per_arm)
         bandit.cumulative_reward_fixed[i] = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice[i]]
-        bandit.average_reward_fixed[i] = bandit.average_reward_per_arm[bandit.best_fixed_choice[i]]
+        bandit.average_reward_fixed[i] += bandit.average_reward_per_arm[bandit.best_fixed_choice[i]]
+        bandit.regret_fixed[i] = bandit.cumulative_reward_fixed[i] - bandit.algorithm_cumulative_reward[i]
         #TODO define bdc and see if we update elementwise or vectorwise
         # bandit.best_dynamic_choice .= bdc()
         # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
@@ -119,6 +127,8 @@ MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm 
 
     function reset!(bandit::MABStruct)
         fill!(bandit.γ, 0)
+        fill!(bandit.algorithm_reward, 0)
+        fill!(bandit.algorithm_cumulative_reward, 0)
         foreach(x->fill!(x, 0), bandit.sequence_of_rewards)
         fill!(bandit.cumulative_reward_per_arm, 0)
         fill!(bandit.average_reward_per_arm, 0)
