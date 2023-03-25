@@ -1,76 +1,142 @@
 module MABStructs
 
-using Random, Distributions
+    using Random, Distributions
 
 
-Random.seed!(42)
+    Random.seed!(42)
 
-mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
-    name::String
-    T::Int64
-    A::DT
-    ξ::Categorical
-    γ::Vector{Int8}
-    sequence_of_rewards::Vector{Vector{Float64}}
-    cumulative_reward_per_arm::Vector{Float64}
-    average_reward_per_arm::Vector{Float64}
-    best_fixed_choice::Vector{Int8}
-    cumulative_reward_fixed::Vector{Float64}
-    average_reward_fixed::Vector{Float64}
-    regret_fixed::Vector{Float64}
-    best_dynamic_choice::Vector{Int8}
-    cumulative_reward_dynamic::Vector{Float64}
-    average_reward_dynamic::Vector{Float64}
-    regret_dynamic::Vector{Float64}
-    τ::Int64
+    mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
+        name::String
+        T::Int64
+        A::DT
+        ξ::Categorical
+        γ::Vector{Int8}
+        choices_per_arm::Vector{Int8}
+        algorithm_reward::Vector{Float64}
+        algorithm_cumulative_reward::Vector{Float64}
+        sequence_of_rewards::Vector{Vector{Float64}}
+        cumulative_reward_per_arm_bandit::Vector{Float64}
+        cumulative_reward_per_arm::Vector{Float64}
+        average_reward_per_arm::Vector{Float64}
+        best_fixed_choice::Vector{Int8}
+        cumulative_reward_fixed::Vector{Float64}
+        average_reward_fixed::Vector{Float64}
+        regret_fixed::Vector{Float64}
+        best_dynamic_choice::Vector{Int8}
+        cumulative_reward_dynamic::Vector{Float64}
+        average_reward_dynamic::Vector{Float64}
+        regret_dynamic::Vector{Float64}
+        τ::Int64
 
-    function MABStruct(T::Int64, A::DT, ξ::Categorical, name::String) where DT <: Tuple{Vararg{Distribution}}
-        # Sanity Checks
-        length(A) == ncategories(ξ) || throw(ArgumentError("Error in construction"))
-        
-        # Initialised values
-        γ = zeros(Int8, T)
-        sequence_of_rewards = [zeros(Float64, length(A)) for _ in 1:T]
-        cumulative_reward_per_arm = zeros(Float64, length(A))
-        average_reward_per_arm = zeros(Float64, length(A))
-        best_fixed_choice = zeros(Int8, T)
-        cumulative_reward_fixed = zeros(Float64, T)
-        average_reward_fixed = zeros(Float64, T)
-        regret_fixed = zeros(Float64, T)
-        best_dynamic_choice = zeros(Int8, T)
-        cumulative_reward_dynamic = zeros(Float64, T)
-        average_reward_dynamic = zeros(Float64, T)
-        regret_dynamic = zeros(Float64, T)
+        function MABStruct(T::Int64, A::DT, ξ::Categorical, name::String) where DT <: Tuple{Vararg{Distribution}}
+            # Sanity Checks
+            length(A) == ncategories(ξ) || throw(ArgumentError("Error in construction"))
+            
+            # Initialised values
+            γ = zeros(Int8, T)
+            choices_per_arm = zeros(Int64, length(A))
+            algorithm_reward = zeros(Float64, T)
+            algorithm_cumulative_reward = zeros(Float64, T)
+            sequence_of_rewards = [zeros(Float64, length(A)) for _ in 1:T]
+            cumulative_reward_per_arm_bandit = zeros(Float64, length(A))
+            cumulative_reward_per_arm = zeros(Float64, length(A))
+            average_reward_per_arm = zeros(Float64, length(A))
+            best_fixed_choice = zeros(Int8, T)
+            cumulative_reward_fixed = zeros(Float64, T)
+            average_reward_fixed = zeros(Float64, T)
+            regret_fixed = zeros(Float64, T)
+            best_dynamic_choice = zeros(Int8, T)
+            cumulative_reward_dynamic = zeros(Float64, T)
+            average_reward_dynamic = zeros(Float64, T)
+            regret_dynamic = zeros(Float64, T)
 
-        τ = 0
+            τ = 0
 
-        return new{DT}(name, T, A, ξ, γ, sequence_of_rewards,
-                       cumulative_reward_per_arm, average_reward_per_arm,
-                       best_fixed_choice, cumulative_reward_fixed, 
-                       average_reward_fixed, average_reward_fixed,
-                       best_dynamic_choice, cumulative_reward_dynamic,
-                       average_reward_dynamic, regret_dynamic,
-                    τ)
+            return new{DT}(name, T, A, ξ, γ, choices_per_arm, algorithm_reward,
+                        algorithm_cumulative_reward, sequence_of_rewards,
+                        cumulative_reward_per_arm_bandit, cumulative_reward_per_arm, 
+                        average_reward_per_arm, best_fixed_choice, 
+                        cumulative_reward_fixed, average_reward_fixed, 
+                        regret_fixed, best_dynamic_choice, 
+                        cumulative_reward_dynamic, average_reward_dynamic, 
+                        regret_dynamic, τ
+                        )
+        end
     end
-end
-MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm Bandit Experiment")
+    MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm Bandit Experiment")
 
-    MABStruct(T::Int64, A::DT, ξ::Categorical) where DT <: Tuple{Vararg{Distribution}} = MABStruct(T, A, ξ, "Multi-Arm Bandit Experiment") 
+    Base.zero(::Type{MABStruct}) = MABStruct(0, Tuple([Beta(1.0, 1.0)]), Distributions.Categorical([1]))
+    Base.zero(::MABStruct) = zero(MABStruct)
+
+    function Base.zeros(::MABStruct, dim::Int64)
+        return Vector[zero(MABStruct) for _ in dim]
+    end
 
     function update_instance!(bandit::MABStruct, action::Integer, reward_vector::Vector)
         bandit.τ += 1
         i = bandit.τ
         bandit.γ[i] = action
+        bandit.choices_per_arm[action] += 1
+        bandit.algorithm_reward[i] = reward_vector[action]
+        bandit.algorithm_cumulative_reward[i] = bandit.algorithm_cumulative_reward[max(i-1, 1)] + reward_vector[action]
         bandit.sequence_of_rewards[i] .= reward_vector
+        bandit.cumulative_reward_per_arm_bandit[action] += reward_vector[action] 
         bandit.cumulative_reward_per_arm .+= reward_vector
         bandit.average_reward_per_arm .= bandit.cumulative_reward_per_arm ./ i
         bandit.best_fixed_choice[i] = argmax(bandit.cumulative_reward_per_arm)
         bandit.cumulative_reward_fixed[i] = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice[i]]
-        bandit.average_reward_fixed[i] = bandit.average_reward_per_arm[bandit.best_fixed_choice[i]]
+        bandit.average_reward_fixed[i] += bandit.average_reward_per_arm[bandit.best_fixed_choice[i]]
+        bandit.regret_fixed[i] = bandit.cumulative_reward_fixed[i] - bandit.algorithm_cumulative_reward[i]
         #TODO define bdc and see if we update elementwise or vectorwise
         # bandit.best_dynamic_choice .= bdc()
         # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
         # bandit.average_reward_dynamic = zeros(Float64, T)
+        # bandit.regret_dynamic = zeros(Float64, T)
+        return 
+    end
+
+    function set_instance!(bandit::MABStruct, bandit_new::MABStruct)
+        # bandit.name = bandit_new.name
+        bandit.τ = bandit_new.τ
+        bandit.γ = bandit_new.γ
+        bandit.choices_per_arm = bandit.choices_per_arm
+        bandit.algorithm_reward = bandit_new.algorithm_reward
+        bandit.algorithm_cumulative_reward = bandit_new.algorithm_cumulative_reward
+        bandit.sequence_of_rewards = bandit_new.sequence_of_rewards
+        bandit.cumulative_reward_per_arm_bandit = bandit_new.cumulative_reward_per_arm_bandit
+        bandit.cumulative_reward_per_arm = bandit_new.cumulative_reward_per_arm
+        bandit.average_reward_per_arm = bandit_new.average_reward_per_arm
+        bandit.best_fixed_choice = bandit_new.best_fixed_choice
+        bandit.cumulative_reward_fixed = bandit_new.cumulative_reward_fixed
+        bandit.average_reward_fixed = bandit_new.average_reward_fixed
+        bandit.regret_fixed = bandit_new.regret_fixed
+        #TODO define bdc and see if we update elementwise or vectorwise
+        # bandit.best_dynamic_choice .= bdc()
+        # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
+        # bandit.average_reward_dynamic = zeros(Float64, T)
+        # bandit.regret_dynamic = bandit_new.regret_dynamic
+        return 
+    end
+
+    function set2_instance!(bandit::MABStruct, bandit_new::MABStruct)
+        bandit.τ = bandit_new.τ
+        bandit.γ .= bandit_new.γ
+        bandit.choices_per_arm .= bandit.choices_per_arm
+        bandit.algorithm_reward .= bandit_new.algorithm_reward
+        bandit.algorithm_cumulative_reward .= bandit_new.algorithm_cumulative_reward
+        bandit.sequence_of_rewards = bandit_new.sequence_of_rewards
+        bandit.cumulative_reward_per_arm_bandit .= bandit_new.cumulative_reward_per_arm_bandit
+        bandit.cumulative_reward_per_arm .= bandit_new.cumulative_reward_per_arm
+        bandit.average_reward_per_arm .= bandit_new.average_reward_per_arm
+        bandit.best_fixed_choice .= bandit_new.best_fixed_choice
+        bandit.cumulative_reward_fixed .= bandit_new.cumulative_reward_fixed
+        bandit.average_reward_fixed .= bandit_new.average_reward_fixed
+        bandit.regret_fixed .= bandit_new.regret_fixed
+        #TODO define bdc and see if we update elementwise or vectorwise
+        # bandit.best_dynamic_choice .= bdc()
+        # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
+        # bandit.average_reward_dynamic = zeros(Float64, T)
+        # bandit.regret_dynamic = bandit_new.regret_dynamic
         return 
     end
 
@@ -93,6 +159,7 @@ MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm 
         println(io, "Full Information Case")
         println(io, "Policy: $(bandit.ξ)")
         println(io, "Choice vector: $(bandit.γ)")
+        println(io, "Choices per arm: $(bandit.choices_per_arm)")
         println(io, "History of rewards: $(bandit.sequence_of_rewards)")
         println(io, "cumulative_reward_per_arm: $(bandit.cumulative_reward_per_arm)")
         println(io, "average_reward_per_arm: $(bandit.average_reward_per_arm)")
@@ -102,6 +169,8 @@ MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm 
         println(io, "best_dynamic_choice: $(bandit.best_dynamic_choice)")
         println(io, "cumulative_reward_dynamic: $(bandit.cumulative_reward_dynamic)")
         println(io, "average_reward_dynamic: $(bandit.average_reward_dynamic)")
+        println(io, "regret_fixed: $(bandit.regret_fixed)")
+        println(io, "regret_dynamic: $(bandit.regret_dynamic)")
     end
 
     #TODO does it make sense to use a kw_dict
@@ -114,20 +183,26 @@ MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm 
             probs(bandit.ξ) .= optimizer(bandit.ξ, bandit.sequence_of_rewards[τ]; kw_dict...)
             @assert abs(sum(probs(bandit.ξ)) - 1.0 < 1e-10)
         end
-        println("Game Terminated")
+        # println("Game Terminated")
     end
 
     function reset!(bandit::MABStruct)
         fill!(bandit.γ, 0)
+        fill!(bandit.choices_per_arm, 0)
+        fill!(bandit.algorithm_reward, 0)
+        fill!(bandit.algorithm_cumulative_reward, 0)
         foreach(x->fill!(x, 0), bandit.sequence_of_rewards)
+        fill!(bandit.cumulative_reward_per_arm_bandit, 0)
         fill!(bandit.cumulative_reward_per_arm, 0)
         fill!(bandit.average_reward_per_arm, 0)
         fill!(bandit.best_fixed_choice, 0)
         fill!(bandit.cumulative_reward_fixed, 0)
         fill!(bandit.average_reward_fixed, 0)
+        fill!(bandit.regret_fixed, 0)
         fill!(bandit.best_dynamic_choice, 0)
         fill!(bandit.cumulative_reward_dynamic, 0)
         fill!(bandit.average_reward_dynamic, 0)
+        fill!(bandit.regret_dynamic, 0)
         bandit.τ = 0
         return
     end
