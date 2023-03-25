@@ -1,0 +1,20 @@
+
+NUMBER_OF_EXPERIMENTS_PER_ALGORITHM: 100
+NUMBER_OF_ITERATIONS_PER_EXPERIMENT: 10
+A:  
+  - Dist: Beta
+    Param1: 0.15
+    Param2: 0.7
+  
+  - Dist: Beta
+    Param1: 0.54
+    Param2: 0.2
+
+  - Dist: Beta
+    Param1: 0.38
+    Param2: 0.5
+
+ξ:
+  - Arm1: 0.3333
+  - Arm2: 0.3333
+  - Arm3: 0.3333
