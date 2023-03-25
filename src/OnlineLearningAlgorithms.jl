@@ -1,12 +1,13 @@
 module OnlineLearningAlgorithms
 export ExponentiatedGradient
-using Random, Distributions
+using Random, Distributions, DataStructures
 
 
     function ExponentiatedGradient(ξ, reward_vector; η=0.01)
         loss = -1 .* reward_vector
         #TODO ask CB if it makes sense to use expm1
-        return probs(ξ) .* exp.(-η.*loss) ./ sum(probs(ξ) .* exp.(-η.*loss))
+        return probs(ξ) .* exp.(-η.*loss) ./ sum(probs(ξ) .* exp.(-η.*loss))  
+        # TODO: Fix whether we should return the probs or the DiscreteCategorical
     end
 
     function FtlrExponentiatedGradient(τ, cumulative_reward_per_arm; α=1/sqrt(log(length(cumulative_reward_per_arm))))
@@ -75,6 +76,48 @@ using Random, Distributions
             iteration += 1
         end
     end
+
+    function ExploreThenCommit(τ, γ, cumulative_reward_per_arm_bandit; m=10)
+        d = length(cumulative_reward_per_arm_bandit)
+        counter_per_arm = counter(γ[1:min(d*m, τ)])
+        choices_per_arm = zeros(Int64, d)
+        for i in sort(collect(keys(counter_per_arm)))
+            if i != 0
+                choices_per_arm[i] = choices[i]
+            end
+        end
+        if τ <= d*m
+            ξ = zeros(Float64, d)
+            ξ[(t % d) + 1] = 1
+            return ξ
+        else 
+            ξ = zeros(Float64, d)
+            ξ[argmax(cumulative_reward_per_arm_bandit ./ choices_per_arm)] = 1
+            return ξ
+        end 
     
+    function UpperConfidenceBound(γ, τ, sequence_of_rewards; alpha = 3)
+        if alpha <= 2
+            throw(ArgumentError)
+        end
+        d = length(cumulative_reward_per_arm_bandit)
+        counter_per_arm = counter(γ[1:min(d*m, τ)])
+        choices_per_arm = zeros(Int64, d)
+        for i in sort(collect(keys(counter_per_arm)))  # Do it with a cache
+            if i != 0
+                choices_per_arm[i] = choices[i]
+            end
+        end
+        
+        average_reward_per_arm_bandit = [if choices_per_arm[i] > 0 cumulative_reward_per_arm_bandit[i] / choices_per_arm[i] else τ end for i in 1:d]
+        lower_confidence_band = [if choices_per_arm[i] > 0 -average_reward_per_arm_bandit[i] - sqrt(2αlog(τ))/choices_per_arm[i]
+    else average_reward_per_arm_bandit - 1 end for i in 1:d]
+        ξ = zeros(Float64, d)
+        ξ[argmin(lower_confidence_band)]
+        return ξ
+    end 
+
+
+
 
 end #Module
