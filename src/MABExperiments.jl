@@ -1,12 +1,11 @@
 using Random, Distributions
-NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 1000
-NUMBER_OF_ITERATIONS_PER_EXPERIMENT = 10
-Random.seed!(42)
+NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 10
+NUMBER_OF_ITERATIONS_PER_EXPERIMENT = 1000
+Random.seed!(422)
 seeds = rand(1:10000000, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM)
 
-# include("MABStruct.jl"); M = MABStructs;
-# include("src\\MABStruct.jl"); M = MABStructs;
-# include("OnlineLearningAlgorithms.jl"); O=OnlineLearningAlgorithms;
+include("MABStruct.jl"); M = MABStructs;
+include("OnlineLearningAlgorithms.jl"); O=OnlineLearningAlgorithms;
 
 
 A = (Beta(0.15, 0.7), Beta(0.54, 0.2), Beta(0.38, 0.5))
@@ -65,4 +64,4 @@ function experiment_1(A, ξ, algorithms)
 end
 # M.run!(game, O.ExponentiatedGradient, true; kw_dict=Dict(:η => √(2*log(length(game.A))/game.T)))
 
-experiment_1(A, ξ, algorithms)
+experiment_1(A, ξ, algorithms);

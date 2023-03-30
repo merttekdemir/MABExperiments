@@ -12,13 +12,14 @@ module MABStructs
         ξ::Categorical
         γ::Vector{Int8}
         reward_vector::Vector{Float64}
-        choices_per_arm::Vector{Int8}
+        choices_per_arm::Vector{Int64}
         algorithm_reward::Vector{Float64}
         algorithm_cumulative_reward::Vector{Float64}
         sequence_of_rewards::Vector{Vector{Float64}}
         cumulative_reward_per_arm_bandit::Vector{Float64}
         cumulative_reward_per_arm::Vector{Float64}
         average_reward_per_arm::Vector{Float64}
+        average_reward_per_arm_bandit::Vector{Float64}
         best_fixed_choice::Vector{Int8}
         cumulative_reward_fixed::Vector{Float64}
         average_reward_fixed::Vector{Float64}
@@ -31,18 +32,20 @@ module MABStructs
 
         function MABStruct(T::Int64, A::DT, ξ::Categorical, name::String) where DT <: Tuple{Vararg{Distribution}}
             # Sanity Checks
-            length(A) == ncategories(ξ) || throw(ArgumentError("Error in construction"))
+            n_actions = length(A)
+            n_actions == ncategories(ξ) || throw(ArgumentError("Error in construction"))
             
             # Initialised values
             γ = zeros(Int8, T)
-            reward_vector = zeros(Float64, length(A))
-            choices_per_arm = zeros(Int64, length(A))
+            reward_vector = zeros(Float64, n_actions)
+            choices_per_arm = zeros(Int64, n_actions)
             algorithm_reward = zeros(Float64, T)
             algorithm_cumulative_reward = zeros(Float64, T)
-            sequence_of_rewards = [zeros(Float64, length(A)) for _ in 1:T]
-            cumulative_reward_per_arm_bandit = zeros(Float64, length(A))
-            cumulative_reward_per_arm = zeros(Float64, length(A))
-            average_reward_per_arm = zeros(Float64, length(A))
+            sequence_of_rewards = [zeros(Float64, n_actions) for _ in 1:T]
+            cumulative_reward_per_arm_bandit = zeros(Float64, n_actions)
+            cumulative_reward_per_arm = zeros(Float64, n_actions)
+            average_reward_per_arm = zeros(Float64, n_actions)
+            average_reward_per_arm_bandit = zeros(Float64, n_actions)
             best_fixed_choice = zeros(Int8, T)
             cumulative_reward_fixed = zeros(Float64, T)
             average_reward_fixed = zeros(Float64, T)
@@ -58,9 +61,9 @@ module MABStructs
                         choices_per_arm, algorithm_reward,
                         algorithm_cumulative_reward, sequence_of_rewards,
                         cumulative_reward_per_arm_bandit, cumulative_reward_per_arm, 
-                        average_reward_per_arm, best_fixed_choice, 
-                        cumulative_reward_fixed, average_reward_fixed, 
-                        regret_fixed, best_dynamic_choice, 
+                        average_reward_per_arm, average_reward_per_arm_bandit,
+                        best_fixed_choice, cumulative_reward_fixed, 
+                        average_reward_fixed, regret_fixed, best_dynamic_choice, 
                         cumulative_reward_dynamic, average_reward_dynamic, 
                         regret_dynamic, τ
                         )
@@ -86,6 +89,7 @@ module MABStructs
         bandit.cumulative_reward_per_arm_bandit[action] += bandit.reward_vector[action] 
         bandit.cumulative_reward_per_arm .+= bandit.reward_vector
         bandit.average_reward_per_arm .= bandit.cumulative_reward_per_arm ./ i
+        bandit.average_reward_per_arm_bandit[action] = bandit.cumulative_reward_per_arm_bandit[action]/bandit.choices_per_arm[action] 
         bandit.best_fixed_choice[i] = argmax(bandit.cumulative_reward_per_arm)
         bandit.cumulative_reward_fixed[i] = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice[i]]
         bandit.average_reward_fixed[i] += bandit.average_reward_per_arm[bandit.best_fixed_choice[i]]
@@ -111,6 +115,7 @@ module MABStructs
         bandit.cumulative_reward_per_arm_bandit = bandit_new.cumulative_reward_per_arm_bandit
         bandit.cumulative_reward_per_arm = bandit_new.cumulative_reward_per_arm
         bandit.average_reward_per_arm = bandit_new.average_reward_per_arm
+        bandit.average_reward_per_arm_bandit = bandit_new.average_reward_per_arm_bandit
         bandit.best_fixed_choice = bandit_new.best_fixed_choice
         bandit.cumulative_reward_fixed = bandit_new.cumulative_reward_fixed
         bandit.average_reward_fixed = bandit_new.average_reward_fixed
@@ -169,7 +174,6 @@ module MABStructs
             kw_list, default_kw_dict = [getproperty(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[default_argname]) for default_argname in default_argnames])
         end
 
-        cache = nothing
         for _ in 1:bandit.T
             run_step!(bandit)
             verbose && println(bandit)
@@ -197,6 +201,7 @@ module MABStructs
         fill!(bandit.cumulative_reward_per_arm_bandit, 0)
         fill!(bandit.cumulative_reward_per_arm, 0)
         fill!(bandit.average_reward_per_arm, 0)
+        fill!(bandit.average_reward_per_arm_bandit, 0)
         fill!(bandit.best_fixed_choice, 0)
         fill!(bandit.cumulative_reward_fixed, 0)
         fill!(bandit.average_reward_fixed, 0)
