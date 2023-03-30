@@ -6,7 +6,7 @@ using Random, Distributions, DataStructures
     function ExponentiatedGradient(ξ, reward_vector; η=0.01)
         loss = -1 .* reward_vector
         #TODO ask CB if it makes sense to use expm1
-        return probs(ξ) .* exp.(-η.*loss) ./ sum(probs(ξ) .* exp.(-η.*loss))  
+        return (probs(ξ) .* exp.(-η.*loss)) ./ (sum(probs(ξ) .* exp.(-η.*loss))) 
         # TODO: Fix whether we should return the probs or the DiscreteCategorical
     end
 
@@ -19,15 +19,15 @@ using Random, Distributions, DataStructures
         return exp.(-η.*loss) ./ sum(exp.(-η.*loss))
     end
 
-    function EXP3(ξ, reward_vector, γ; η=1/sqrt(T))
-        most_recent_action = last(γ)
-        loss = reward_vector[most_recent_action]/ probs(ξ[most_recent_action]) #observed loss
+    function EXP3(ξ, reward_vector, γ, T, τ; η=1/sqrt(T))
+        most_recent_action = γ[τ]
+        loss = reward_vector[most_recent_action]/ probs(ξ)[most_recent_action]  # observed loss
         loss_vector = zeros(Float64, length(reward_vector))
         loss_vector[most_recent_action] = loss
         return probs(ξ) .* exp.(-η.*loss_vector) ./ sum(probs(ξ) .* exp.(-η.*loss_vector))
     end
 
-    # function ImplicityNormalizedForecaster(ξ, reward_vector, γ; q=0.5, η=1/sqrt(T), eps=1e-5, β = 1, total_number_iterations = 1000)
+    # function ImplicitlyNormalizedForecaster(ξ, reward_vector, γ; q=0.5, η=1/sqrt(T), eps=1e-5, β = 1, total_number_iterations = 1000)
     #    most_recent_action = last(γ)
     #    loss = reward_vector[most_recent_action]/ probs(ξ[most_recent_action]) #observed loss
     #    loss_vector = zeros(Float64, length(reward_vector))
@@ -79,23 +79,19 @@ using Random, Distributions, DataStructures
     #    end
     #end
 
-    function ExploreThenCommit(τ, γ, cumulative_reward_per_arm_bandit; m=10)
+    function ExploreThenCommit(ξ, τ, γ, cumulative_reward_per_arm_bandit, choices_per_arm; m=10)
         d = length(cumulative_reward_per_arm_bandit)
-        counter_per_arm = counter(γ[1:min(d*m, τ)])
-        choices_per_arm = zeros(Int64, d)
-        for i in sort(collect(keys(counter_per_arm)))
-            if i != 0
-                choices_per_arm[i] = choices[i]
-            end
-        end
+
         if τ <= d*m
-            ξ = zeros(Float64, d)
-            ξ[(t % d) + 1] = 1
-            return ξ
-        else 
-            ξ = zeros(Float64, d)
-            ξ[argmax(cumulative_reward_per_arm_bandit ./ choices_per_arm)] = 1
-            return ξ
+            probs(ξ) .*= 0
+            probs(ξ)[(τ % d) + 1] = 1
+            return probs(ξ)
+        elseif τ == (d*m + 1)
+            probs(ξ) .*= 0
+            probs(ξ)[argmax(cumulative_reward_per_arm_bandit ./ choices_per_arm)] = 1
+            return probs(ξ)
+        else
+            return probs(ξ)
         end 
     end
     
