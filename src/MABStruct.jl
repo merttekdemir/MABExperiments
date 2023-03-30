@@ -11,6 +11,7 @@ module MABStructs
         A::DT
         ξ::Categorical
         γ::Vector{Int8}
+        reward_vector::Vector{Float64}
         choices_per_arm::Vector{Int8}
         algorithm_reward::Vector{Float64}
         algorithm_cumulative_reward::Vector{Float64}
@@ -34,6 +35,7 @@ module MABStructs
             
             # Initialised values
             γ = zeros(Int8, T)
+            reward_vector = zeros(Float64, length(A))
             choices_per_arm = zeros(Int64, length(A))
             algorithm_reward = zeros(Float64, T)
             algorithm_cumulative_reward = zeros(Float64, T)
@@ -52,7 +54,8 @@ module MABStructs
 
             τ = 0
 
-            return new{DT}(name, T, A, ξ, γ, choices_per_arm, algorithm_reward,
+            return new{DT}(name, T, A, ξ, γ, reward_vector, 
+                        choices_per_arm, algorithm_reward,
                         algorithm_cumulative_reward, sequence_of_rewards,
                         cumulative_reward_per_arm_bandit, cumulative_reward_per_arm, 
                         average_reward_per_arm, best_fixed_choice, 
@@ -65,23 +68,23 @@ module MABStructs
     end
     MABStruct(T::Int64, A::Tuple, ξ::Categorical) = MABStruct(T, A, ξ, "Multi-Arm Bandit Experiment")
 
-    Base.zero(::Type{MABStruct}) = MABStruct(0, Tuple([Beta(1.0, 1.0)]), Distributions.Categorical([1]))
-    Base.zero(::MABStruct) = zero(MABStruct)
+    Base.zero(::Type{MABStruct}, A::DT) where DT <: Tuple{Vararg{Distribution}} = MABStruct(0, A, Distributions.Categorical(length(A)))
+    Base.zero(::MABStruct, A::DT) where DT <: Tuple{Vararg{Distribution}} = zero(MABStruct, A)
 
-    function Base.zeros(::MABStruct, dim::Int64)
-        return Vector[zero(MABStruct) for _ in dim]
+    function Base.zeros(::Type{MABStruct}, A::DT, dim::Int64) where DT <: Tuple{Vararg{Distribution}}
+        return [zero(MABStruct, A) for _ in range(1, dim)]
     end
 
-    function update_instance!(bandit::MABStruct, action::Integer, reward_vector::Vector)
+    function update_instance!(bandit::MABStruct, action::Integer)
         bandit.τ += 1
         i = bandit.τ
         bandit.γ[i] = action
         bandit.choices_per_arm[action] += 1
-        bandit.algorithm_reward[i] = reward_vector[action]
-        bandit.algorithm_cumulative_reward[i] = bandit.algorithm_cumulative_reward[max(i-1, 1)] + reward_vector[action]
-        bandit.sequence_of_rewards[i] .= reward_vector
-        bandit.cumulative_reward_per_arm_bandit[action] += reward_vector[action] 
-        bandit.cumulative_reward_per_arm .+= reward_vector
+        bandit.algorithm_reward[i] = bandit.reward_vector[action]
+        bandit.algorithm_cumulative_reward[i] = bandit.algorithm_cumulative_reward[max(i-1, 1)] + bandit.reward_vector[action]
+        bandit.sequence_of_rewards[i] .= bandit.reward_vector
+        bandit.cumulative_reward_per_arm_bandit[action] += bandit.reward_vector[action] 
+        bandit.cumulative_reward_per_arm .+= bandit.reward_vector
         bandit.average_reward_per_arm .= bandit.cumulative_reward_per_arm ./ i
         bandit.best_fixed_choice[i] = argmax(bandit.cumulative_reward_per_arm)
         bandit.cumulative_reward_fixed[i] = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice[i]]
@@ -95,11 +98,13 @@ module MABStructs
         return 
     end
 
-    function set_instance!(bandit::MABStruct, bandit_new::MABStruct)
-        # bandit.name = bandit_new.name
+    function set_instance!(bandit::MABStruct, bandit_new::MABStruct) # T <: Tuple{Vararg{Distribution}}
+        bandit.name = bandit_new.name
+        bandit.ξ = bandit_new.ξ
         bandit.τ = bandit_new.τ
         bandit.γ = bandit_new.γ
-        bandit.choices_per_arm = bandit.choices_per_arm
+        bandit.reward_vector = bandit_new.reward_vector
+        bandit.choices_per_arm = bandit_new.choices_per_arm
         bandit.algorithm_reward = bandit_new.algorithm_reward
         bandit.algorithm_cumulative_reward = bandit_new.algorithm_cumulative_reward
         bandit.sequence_of_rewards = bandit_new.sequence_of_rewards
@@ -118,37 +123,15 @@ module MABStructs
         return 
     end
 
-    function set2_instance!(bandit::MABStruct, bandit_new::MABStruct)
-        bandit.τ = bandit_new.τ
-        bandit.γ .= bandit_new.γ
-        bandit.choices_per_arm .= bandit.choices_per_arm
-        bandit.algorithm_reward .= bandit_new.algorithm_reward
-        bandit.algorithm_cumulative_reward .= bandit_new.algorithm_cumulative_reward
-        bandit.sequence_of_rewards = bandit_new.sequence_of_rewards
-        bandit.cumulative_reward_per_arm_bandit .= bandit_new.cumulative_reward_per_arm_bandit
-        bandit.cumulative_reward_per_arm .= bandit_new.cumulative_reward_per_arm
-        bandit.average_reward_per_arm .= bandit_new.average_reward_per_arm
-        bandit.best_fixed_choice .= bandit_new.best_fixed_choice
-        bandit.cumulative_reward_fixed .= bandit_new.cumulative_reward_fixed
-        bandit.average_reward_fixed .= bandit_new.average_reward_fixed
-        bandit.regret_fixed .= bandit_new.regret_fixed
-        #TODO define bdc and see if we update elementwise or vectorwise
-        # bandit.best_dynamic_choice .= bdc()
-        # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
-        # bandit.average_reward_dynamic = zeros(Float64, T)
-        # bandit.regret_dynamic = bandit_new.regret_dynamic
-        return 
-    end
-
-    function pull(bandit::MABStruct)
-        return [rand(distrib) for distrib in bandit.A]
+    function pull!(bandit::MABStruct)
+        bandit.reward_vector = [rand(distrib) for distrib in bandit.A]
     end
 
     function run_step!(bandit::MABStruct)
         #Sample an action from the policy distribution
         action = rand(bandit.ξ)
-        reward_vector = pull(bandit)
-        update_instance!(bandit, action, reward_vector)
+        pull!(bandit)
+        update_instance!(bandit, action)
     end
 
     #TODO fix specific printing for full info case and partial info case
@@ -173,21 +156,40 @@ module MABStructs
         println(io, "regret_dynamic: $(bandit.regret_dynamic)")
     end
 
-    #TODO does it make sense to use a kw_dict
-    function run!(bandit::MABStruct, optimizer::Function, verbose=false::Bool; kw_dict::Dict)
+    function update_kw_list(bandit::MABStruct, argnames::Vector{Symbol}) # T <: UnionAll{Float64, Vector{Float64}}
+        return [getproperty(bandit, argname) for argname in argnames]
+    end
+
+    function run!(bandit::MABStruct, optimizer::Function, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Any, Any}; verbose=false::Bool)
         # println(bandit)
-        for τ in 1:bandit.T
+        
+        if isempty(default_argnames) # TODO: Add check on quality of default_values
+            kw_list, default_kw_dict = [getproperty(bandit, argname) for argname in argnames], Dict()
+        else
+            kw_list, default_kw_dict = [getproperty(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[default_argname]) for default_argname in default_argnames])
+        end
+
+        cache = nothing
+        for _ in 1:bandit.T
             run_step!(bandit)
             verbose && println(bandit)
-            #TODO update policy
-            probs(bandit.ξ) .= optimizer(bandit.ξ, bandit.sequence_of_rewards[τ]; kw_dict...)
-            @assert abs(sum(probs(bandit.ξ)) - 1.0 < 1e-10)
+            kw_list = update_kw_list(bandit, argnames)
+            # update policy
+            if isempty(default_kw_dict)
+                probs(bandit.ξ) .= optimizer(kw_list...)  # The order is mantained by the construction
+            else
+                probs(bandit.ξ) .= optimizer(kw_list...; default_kw_dict...)
+            end
+            print(sum(probs(bandit.ξ)) - 1.0)
+            @assert abs(sum(probs(bandit.ξ)) - 1.0) < 1e-5
         end
         # println("Game Terminated")
     end
 
-    function reset!(bandit::MABStruct)
+    function reset!(bandit::MABStruct, name::String)
+        bandit.name = name
         fill!(bandit.γ, 0)
+        fill!(bandit.reward_vector, 0)
         fill!(bandit.choices_per_arm, 0)
         fill!(bandit.algorithm_reward, 0)
         fill!(bandit.algorithm_cumulative_reward, 0)
