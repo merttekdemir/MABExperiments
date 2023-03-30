@@ -95,19 +95,19 @@ using Random, Distributions, DataStructures
         end 
     end
     
-    function UpperConfidenceBound(ξ, τ, choices_per_arm, average_reward_per_arm_bandit; alpha = 3)
+    function UpperConfidenceBound(ξ, τ, choices_per_arm, average_reward_per_arm_bandit; α = 3)
         probs(ξ) .*= 0
 
-        if alpha <= 2
+        if α <= 2
             throw(ArgumentError)
         end
         d = length(choices_per_arm)
-        if min(choices_per_arm) == 0
+        if minimum(choices_per_arm) == 0
             probs(ξ)[argmin(choices_per_arm)] = 1
             return probs(ξ)
         end
 
-        lower_confidence_band = -1 .* average_reward_per_arm_bandit .- sqrt(2αlog(τ))./choices_per_arm
+        lower_confidence_band = -1 .* average_reward_per_arm_bandit .- sqrt(2*α*log(τ))./choices_per_arm
         probs(ξ)[argmin(lower_confidence_band)] = 1
         return probs(ξ)
     end 
