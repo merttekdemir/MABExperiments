@@ -3,20 +3,23 @@ export ExponentiatedGradient
 using Random, Distributions, DataStructures
 
 
-    function ExponentiatedGradient(ξ, reward_vector; η=0.01)
+    function ExponentiatedGradient(ξ::Categorical{Float64, Vector{Float64}}, reward_vector::Vector{Float64}; η=0.01::Float64)
         loss = -1 .* reward_vector
         #TODO ask CB if it makes sense to use expm1
-        return (probs(ξ) .* exp.(-η.*loss)) ./ (sum(probs(ξ) .* exp.(-η.*loss)))
+        updated_probs = probs(ξ) .* exp.(-η.*loss)
+        return updated_probs ./ sum(updated_probs)
         # TODO: Fix whether we should return the probs or the DiscreteCategorical
     end
 
-    function FtlrExponentiatedGradient(τ, cumulative_reward_per_arm; α=1/sqrt(log(length(cumulative_reward_per_arm))))
+    function FtrlExponentiatedGradient(τ, cumulative_reward_per_arm; α=1/sqrt(log(length(cumulative_reward_per_arm))))
         # α > 0
         #Regret upper bound of O(1)/η + O(T)/η
+        cumulative_reward_per_arm = cumulative_reward_per_arm ./ maximum(cumulative_reward_per_arm)
         loss = -1 .* cumulative_reward_per_arm
         η = 1 / α*sqrt(τ) # L_∞ is 1 because of linear loss
         #TODO ask CB if it makes sense to use expm1
-        return exp.(-η.*loss) ./ sum(exp.(-η.*loss))
+        updated_probs = exp.(-η.*loss)
+        return updated_probs ./ sum(updated_probs)
     end
 
     function EXP3(ξ, reward_vector, γ, T, τ; η=1/sqrt(T))

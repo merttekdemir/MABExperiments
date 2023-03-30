@@ -9,7 +9,7 @@ module MABStructs
         name::String
         T::Int64
         A::DT
-        ξ::Categorical
+        ξ::Categorical{Float64, Vector{Float64}}
         γ::Vector{Int8}
         reward_vector::Vector{Float64}
         choices_per_arm::Vector{Int64}
@@ -184,7 +184,8 @@ module MABStructs
             else
                 probs(bandit.ξ) .= optimizer(kw_list...; default_kw_dict...)
             end
-            print(sum(probs(bandit.ξ)) - 1.0)
+            # println("sum")
+            # println(sum(probs(bandit.ξ)) - 1.0)
             @assert abs(sum(probs(bandit.ξ)) - 1.0) < 1e-5
         end
         # println("Game Terminated")
