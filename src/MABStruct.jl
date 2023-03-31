@@ -1,10 +1,6 @@
 module MABStructs
 
     using Random, Distributions
-
-
-    Random.seed!(42)
-
     mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
         name::String
         T::Int64
@@ -77,10 +73,6 @@ module MABStructs
     function Base.zeros(::Type{MABStruct}, A::DT, dim::Int64) where DT <: Tuple{Vararg{Distribution}}
         return [zero(MABStruct, A) for _ in range(1, dim)]
     end
-
-    # function Base.getproperty(obj::MABStruct, sym::Symbol)
-    #     return obj.sym
-    # end
 
     function update_instance!(bandit::MABStruct, action::Integer)
         bandit.τ += 1

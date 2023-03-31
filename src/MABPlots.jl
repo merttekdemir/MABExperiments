@@ -1,5 +1,5 @@
 module MABPlots
-using Statistics, Plot, Distributions
+using Statistics, Plots, Distributions
 include("MABStruct.jl"); M = MABStructs;
 
     function PlotSeriesOverTime(series::Vector{Vector{Float64}})
@@ -33,9 +33,9 @@ include("MABStruct.jl"); M = MABStructs;
         end
     end
 
-    function PlotDiagnostics(MABExperiments::Vector{MABStruct})
+    # function PlotDiagnostics(MABExperiments::Vector{MABStruct})
 
 
-    end
+    # end
 
 end #module
