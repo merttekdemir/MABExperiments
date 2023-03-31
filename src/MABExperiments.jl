@@ -27,31 +27,15 @@ algorithms = [O.ExponentiatedGradient, O.FtrlExponentiatedGradient, O.EXP3, O.Ex
                        O.LinearDecayedEpsilonGreedy, O.Hedge]
 experiments = Dict(algorithm => zeros(M.MABStruct, A, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM) for algorithm in algorithms)
 
-function method_argnames(m::Method)
-    argnames = ccall(:jl_uncompress_argnames, Vector{String}, (Any,), m.slot_syms)  # Figure out how it does it for optimization purposes
-    isempty(argnames) && return argnames
-    return argnames[2:m.nargs]
-end
-
-# function method_args(optimizer::Function, default_values_bool::Bool) # TODO: CHECK TYP CORRECTNESS # Dict signature works with nothing in line 25?
-#     method = methods(optimizer)[1]
-#     matching = match(r"(\()(.*)(\;\s)(.*)(\))", string(method))
-#     if (matching[4] == "") | default_values_bool
-#         return [Symbol(match[1]) for match in eachmatch(r"([\w|_]+)::", matching[2])], Vector{Symbol}()
-#     else
-#         return [Symbol(match[1]) for match in eachmatch(r"([\w|_]+)::", matching[2])], Symbol.(split(matching[4], ", "))
-#     end
-# end
-
-function method_args(optimizer::Function, default_values_bool::Bool) # TODO: CHECK TYP CORRECTNESS # Dict signature works with nothing in line 25?
-    method = methods(optimizer)[1]
-    matching = match(r"(\()(.*)(\;\s)(.*)(\))", string(method))
-    if (matching[4] == "") | default_values_bool
-        return Symbol.(split(matching[2], ", ")), Vector{Symbol}()
-    else
-        return Symbol.(split(matching[2], ", ")), Symbol.(split(matching[4], ", "))
-    end
-end
+function method_args(optimizer::Function, default_values_bool::Bool)
+     method = methods(optimizer)[1]
+     matching = match(r"(\()(.*)(\;\s)(.*)(\))", string(method))
+     if (matching[4] == "") | default_values_bool
+         return [Symbol(match[1]) for match in eachmatch(r"([\w|_]+)::", matching[2])], Vector{Symbol}()
+     else
+         return [Symbol(match[1]) for match in eachmatch(r"([\w|_]+)::", matching[2])], Symbol.(split(matching[4], ", "))
+     end
+ end
 
 function experiment_1(A, ξ, algorithms)
     game = M.MABStruct(NUMBER_OF_ITERATIONS_PER_EXPERIMENT, A, ξ, "MAB_Experiment_1")

@@ -129,7 +129,7 @@ module MABStructs
     end
 
     function pull!(bandit::MABStruct)
-        bandit.reward_vector = [rand(distrib) for distrib in bandit.A]
+        bandit.reward_vector .= rand.(bandit.A)
     end
 
     function run_step!(bandit::MABStruct)
