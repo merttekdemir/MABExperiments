@@ -1,5 +1,4 @@
 module OnlineLearningAlgorithms
-export ExponentiatedGradient
 using Random, Distributions, DataStructures
 
 

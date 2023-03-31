@@ -78,6 +78,10 @@ module MABStructs
         return [zero(MABStruct, A) for _ in range(1, dim)]
     end
 
+    # function Base.getproperty(obj::MABStruct, sym::Symbol)
+    #     return obj.sym
+    # end
+
     function update_instance!(bandit::MABStruct, action::Integer)
         bandit.τ += 1
         i = bandit.τ

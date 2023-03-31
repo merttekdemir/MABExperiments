@@ -45,7 +45,8 @@ function experiment_1(A, ξ, algorithms)
        
 
         for j in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM
-            Random.seed!(seeds[j])
+            #Random.seed!(seeds[j])
+            Random.seed!(rand(1:10000))
 
     #Correct learning rate OMD: √(2*log(length(game.A))/game.T)
             M.reset!(game, "MAB_experiment_$j")
