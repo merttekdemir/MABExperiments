@@ -6,7 +6,7 @@ module MABStructs
         T::Int64
         A::DT
         ξ::Categorical{Float64, Vector{Float64}}
-        γ::Vector{Int8}
+        γ::Vector{Int64}
         reward_vector::Vector{Float64}
         choices_per_arm::Vector{Int64}
         algorithm_reward::Vector{Float64}
@@ -16,11 +16,11 @@ module MABStructs
         cumulative_reward_per_arm::Vector{Float64}
         average_reward_per_arm::Vector{Float64}
         average_reward_per_arm_bandit::Vector{Float64}
-        best_fixed_choice::Vector{Int8}
+        best_fixed_choice::Vector{Int64}
         cumulative_reward_fixed::Vector{Float64}
         average_reward_fixed::Vector{Float64}
         regret_fixed::Vector{Float64}
-        best_dynamic_choice::Vector{Int8}
+        best_dynamic_choice::Vector{Int64}
         cumulative_reward_dynamic::Vector{Float64}
         average_reward_dynamic::Vector{Float64}
         regret_dynamic::Vector{Float64}
@@ -32,7 +32,7 @@ module MABStructs
             n_actions == ncategories(ξ) || throw(ArgumentError("Error in construction"))
             
             # Initialised values
-            γ = zeros(Int8, T)
+            γ = zeros(Int64, T)
             reward_vector = zeros(Float64, n_actions)
             choices_per_arm = zeros(Int64, n_actions)
             algorithm_reward = zeros(Float64, T)
@@ -42,11 +42,11 @@ module MABStructs
             cumulative_reward_per_arm = zeros(Float64, n_actions)
             average_reward_per_arm = zeros(Float64, n_actions)
             average_reward_per_arm_bandit = zeros(Float64, n_actions)
-            best_fixed_choice = zeros(Int8, T)
+            best_fixed_choice = zeros(Int64, T)
             cumulative_reward_fixed = zeros(Float64, T)
             average_reward_fixed = zeros(Float64, T)
             regret_fixed = zeros(Float64, T)
-            best_dynamic_choice = zeros(Int8, T)
+            best_dynamic_choice = zeros(Int64, T)
             cumulative_reward_dynamic = zeros(Float64, T)
             average_reward_dynamic = zeros(Float64, T)
             regret_dynamic = zeros(Float64, T)
@@ -101,21 +101,21 @@ module MABStructs
     function set_instance!(bandit::MABStruct, bandit_new::MABStruct) # T <: Tuple{Vararg{Distribution}}
         bandit.name = bandit_new.name
         bandit.ξ = bandit_new.ξ
-        bandit.τ = bandit_new.τ
-        bandit.γ = bandit_new.γ
-        bandit.reward_vector = bandit_new.reward_vector
-        bandit.choices_per_arm = bandit_new.choices_per_arm
-        bandit.algorithm_reward = bandit_new.algorithm_reward
-        bandit.algorithm_cumulative_reward = bandit_new.algorithm_cumulative_reward
-        bandit.sequence_of_rewards = bandit_new.sequence_of_rewards
-        bandit.cumulative_reward_per_arm_bandit = bandit_new.cumulative_reward_per_arm_bandit
-        bandit.cumulative_reward_per_arm = bandit_new.cumulative_reward_per_arm
-        bandit.average_reward_per_arm = bandit_new.average_reward_per_arm
-        bandit.average_reward_per_arm_bandit = bandit_new.average_reward_per_arm_bandit
-        bandit.best_fixed_choice = bandit_new.best_fixed_choice
-        bandit.cumulative_reward_fixed = bandit_new.cumulative_reward_fixed
-        bandit.average_reward_fixed = bandit_new.average_reward_fixed
-        bandit.regret_fixed = bandit_new.regret_fixed
+        bandit.τ = copy.(bandit_new.τ)
+        bandit.γ = copy.(bandit_new.γ)
+        bandit.reward_vector = copy.(bandit_new.reward_vector)
+        bandit.choices_per_arm = copy.(bandit_new.choices_per_arm)
+        bandit.algorithm_reward = copy.(bandit_new.algorithm_reward)
+        bandit.algorithm_cumulative_reward = copy.(bandit_new.algorithm_cumulative_reward)
+        bandit.sequence_of_rewards = copy.(bandit_new.sequence_of_rewards)
+        bandit.cumulative_reward_per_arm_bandit = copy.(bandit_new.cumulative_reward_per_arm_bandit)
+        bandit.cumulative_reward_per_arm = copy.(bandit_new.cumulative_reward_per_arm)
+        bandit.average_reward_per_arm = copy.(bandit_new.average_reward_per_arm)
+        bandit.average_reward_per_arm_bandit = copy.(bandit_new.average_reward_per_arm_bandit)
+        bandit.best_fixed_choice = copy.(bandit_new.best_fixed_choice)
+        bandit.cumulative_reward_fixed = copy.(bandit_new.cumulative_reward_fixed)
+        bandit.average_reward_fixed = copy.(bandit_new.average_reward_fixed)
+        bandit.regret_fixed = copy.(bandit_new.regret_fixed)
         #TODO define bdc and see if we update elementwise or vectorwise
         # bandit.best_dynamic_choice .= bdc()
         # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]

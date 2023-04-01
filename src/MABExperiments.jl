@@ -1,6 +1,6 @@
-using Random, Distributions, Plots, Statistics
-NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 10
-NUMBER_OF_ITERATIONS_PER_EXPERIMENT = 10
+using Random, Distributions, Plots, Statistics, StatsBase
+NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 1000
+NUMBER_OF_ITERATIONS_PER_EXPERIMENT = 10000
 Random.seed!(42)
 seeds = rand(1:10000000, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM)
 
@@ -25,7 +25,7 @@ default_values = Dict("ExponentiatedGradient" => Dict(),
 algorithms = [O.ExponentiatedGradient, O.FtrlExponentiatedGradient, O.EXP3, O.ExploreThenCommit,
                        O.UpperConfidenceBound, O.EpsilonGreedy, O.ExpDecayedEpsilonGreedy,
                        O.LinearDecayedEpsilonGreedy, O.Hedge]
-experiments = Dict(string(algorithm) => zeros(M.MABStruct, A, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM) for algorithm in algorithms)
+experiments = Dict(string(algorithm) => [zero(M.MABStruct, A) for i in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM] for algorithm in algorithms)
 
 function method_args(optimizer::Function, default_values_bool::Bool)
      method = methods(optimizer)[1]
@@ -46,16 +46,10 @@ function experiment_1(A, ξ, algorithms)
 
         for j in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM
             Random.seed!(seeds[j])
-            #Random.seed!(rand(1:10000))
-            println(algorithm)
-            println(j)
-            println(rand(2,10))
 
     #Correct learning rate OMD: √(2*log(length(game.A))/game.T)
             M.reset!(game, "MAB_experiment_$j")
             M.run!(game, algorithm, argnames, default_argnames, default_values_algo; verbose=false)
-            println(game)
-            # experiments[algorithm][j] = game
             M.set_instance!(experiments[string(algorithm)][j], game)
         end
     end
@@ -63,19 +57,30 @@ end
 
 function PlotSeriesOverTime(experiments::Dict{String, Vector{M.MABStruct{DT}}}, MABAttribute::Symbol) where DT <: Tuple{Vararg{Distribution}}
     #TODO check if attribute in mabstruct attributes
-    fig = plot(layout=length(experiments))
+    plot_size = length(experiments) * 150
+    plot_title = "Experiment Diganostics For $(String(MABAttribute))"
+    fig = plot(layout=length(experiments), size=(plot_size,plot_size), plot_title=plot_title)
     for (i, algorithm) in enumerate(experiments)
+
         s = [getfield(experiments[algorithm[1]][j], MABAttribute) for j in 1:length(experiments[algorithm[1]])]
-        sample_mean_over_time = Statistics.mean(s)
-        sample_std_error_over_time = Statistics.std(s, mean=sample_mean_over_time)./sqrt(length(s))
-        plot!(xlabel="Iteration", ylabel="Regret Fixed", legend=:topleft, subplot=i)
-        xaxis = [τ for τ in 1:length(s[1])]
-        sublinear_regret = sqrt.(xaxis)
-        plot!(xaxis, sample_mean_over_time, label="Simulated Regret", subplot=i,
-        ribbon=(sample_mean_over_time .- 1.96.*sample_std_error_over_time, sample_mean_over_time .+ 1.96.*sample_std_error_over_time))
-        #plot!(xaxis, 100 .* sublinear_regret, label="Sublinear Regret Benchmark", linestlye=:dash)
-        # plot!(xaxis, sublinear_regret./sample_mean_over_time, label="Sublinear Regret Benchmark", linestlye=:dash)
-        # plot!(xaxis, xaxis, label="45 degree line")
+
+        if typeof(s) == Vector{Vector{Float64}}
+            sample_mean_over_time = Statistics.mean(s)
+            sample_std_error_over_time = Statistics.std(s, mean=sample_mean_over_time)./sqrt(length(s))
+            CI = 1.96.*sample_std_error_over_time
+            subplot_title = "$(algorithm[1])"
+            plot!(xlabel="Iteration", ylabel="Regret Fixed", legend=:topleft, title=subplot_title, subplot=i)
+            xaxis = [τ for τ in 1:length(s[1])]
+            sublinear_regret = sqrt.(xaxis)
+            plot!(xaxis, sample_mean_over_time, label="Simulated Regret", subplot=i, ribbon=CI)
+
+        elseif typeof(s) == Vector{Vector{Int64}}
+            subplot_title = "$(algorithm[1])"
+            plot!(xlabel="Iteration", ylabel="Regret Fixed", legend=:topleft, title=subplot_title, subplot=i)
+            xaxis = [τ for τ in 1:length(s[1])]
+            sublinear_regret = sqrt.(xaxis)
+            plot!(xaxis, StatsBase.mode(s), label="Mode across experiments", subplot=i)
+        end
     end
     display(fig)
     return fig
@@ -83,4 +88,4 @@ end
 # M.run!(game, O.ExponentiatedGradient, true; kw_dict=Dict(:η => √(2*log(length(game.A))/game.T)))
 
 experiment_1(A, ξ, algorithms);
-PlotSeriesOverTime(experiments, :regret_fixed)
+#PlotSeriesOverTime(experiments, :regret_fixed)
