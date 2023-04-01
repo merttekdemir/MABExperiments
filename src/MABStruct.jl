@@ -78,6 +78,31 @@ module MABStructs
         return [zero(MABStruct, A) for _ in range(1, dim)]
     end
 
+    function set_instance!(bandit::MABStruct, bandit_new::MABStruct) # T <: Tuple{Vararg{Distribution}}
+        bandit.name = bandit_new.name
+        bandit.τ = bandit_new.τ
+        bandit.γ = copy(bandit_new.γ)
+        bandit.reward_vector = copy(bandit_new.reward_vector)
+        bandit.choices_per_arm = copy(bandit_new.choices_per_arm)
+        bandit.algorithm_reward = copy(bandit_new.algorithm_reward)
+        bandit.algorithm_cumulative_reward = copy(bandit_new.algorithm_cumulative_reward)
+        bandit.sequence_of_rewards = copy(bandit_new.sequence_of_rewards)
+        bandit.cumulative_reward_per_arm_bandit = copy(bandit_new.cumulative_reward_per_arm_bandit)
+        bandit.cumulative_reward_per_arm = copy(bandit_new.cumulative_reward_per_arm)
+        bandit.average_reward_per_arm = copy(bandit_new.average_reward_per_arm)
+        bandit.average_reward_per_arm_bandit = copy(bandit_new.average_reward_per_arm_bandit)
+        bandit.best_fixed_choice = copy(bandit_new.best_fixed_choice)
+        bandit.cumulative_reward_fixed = copy(bandit_new.cumulative_reward_fixed)
+        bandit.average_reward_fixed = copy(bandit_new.average_reward_fixed)
+        bandit.regret_fixed = copy(bandit_new.regret_fixed)
+        #TODO define bdc and see if we update elementwise or vectorwise
+        # bandit.best_dynamic_choice .= bdc()
+        # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
+        # bandit.average_reward_dynamic = zeros(Float64, T)
+        # bandit.regret_dynamic = bandit_new.regret_dynamic
+        return 
+    end
+
     function update_instance!(bandit::MABStruct, action::Integer)
         bandit.τ += 1
         i = bandit.τ
@@ -102,34 +127,10 @@ module MABStructs
         return 
     end
 
-    function set_instance!(bandit::MABStruct, bandit_new::MABStruct) # T <: Tuple{Vararg{Distribution}}
-        bandit.name = bandit_new.name
-        bandit.ξ = bandit_new.ξ
-        bandit.τ = bandit_new.τ
-        bandit.γ = bandit_new.γ
-        bandit.reward_vector = bandit_new.reward_vector
-        bandit.choices_per_arm = bandit_new.choices_per_arm
-        bandit.algorithm_reward = bandit_new.algorithm_reward
-        bandit.algorithm_cumulative_reward = bandit_new.algorithm_cumulative_reward
-        bandit.sequence_of_rewards = bandit_new.sequence_of_rewards
-        bandit.cumulative_reward_per_arm_bandit = bandit_new.cumulative_reward_per_arm_bandit
-        bandit.cumulative_reward_per_arm = bandit_new.cumulative_reward_per_arm
-        bandit.average_reward_per_arm = bandit_new.average_reward_per_arm
-        bandit.average_reward_per_arm_bandit = bandit_new.average_reward_per_arm_bandit
-        bandit.best_fixed_choice = bandit_new.best_fixed_choice
-        bandit.cumulative_reward_fixed = bandit_new.cumulative_reward_fixed
-        bandit.average_reward_fixed = bandit_new.average_reward_fixed
-        bandit.regret_fixed = bandit_new.regret_fixed
-        #TODO define bdc and see if we update elementwise or vectorwise
-        # bandit.best_dynamic_choice .= bdc()
-        # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
-        # bandit.average_reward_dynamic = zeros(Float64, T)
-        # bandit.regret_dynamic = bandit_new.regret_dynamic
-        return 
-    end
-
     function pull!(bandit::MABStruct)
         bandit.reward_vector .= rand.(bandit.A)
+        # if any(bandit.reward_vector .> 1.0)  # This control is not necessary, unless for specific applications
+        #    throw(ArgumentError)
     end
 
     function run_step!(bandit::MABStruct)
@@ -161,24 +162,40 @@ module MABStructs
         println(io, "regret_dynamic: $(bandit.regret_dynamic)")
     end
 
-    function update_kw_list(bandit::MABStruct, argnames::Vector{Symbol}) # T <: UnionAll{Float64, Vector{Float64}}
-        return [getproperty(bandit, argname) for argname in argnames]
-    end
+    # function update_kw_list(bandit::MABStruct, argnames::Vector{Symbol})
+    #     return [getfield(bandit, argname) for argname in argnames]
+    # end
 
     function run!(bandit::MABStruct, optimizer::Function, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Any, Any}; verbose=false::Bool)
         # println(bandit)
-        
-        if isempty(default_argnames) # TODO: Add check on quality of default_values
-            kw_list, default_kw_dict = [getproperty(bandit, argname) for argname in argnames], Dict()
-        else
-            kw_list, default_kw_dict = [getproperty(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[default_argname]) for default_argname in default_argnames])
+        if bandit.τ == bandit.T
+            println("Maximum iterations reached, reset game or instantiate new one")
         end
-
-        for _ in 1:bandit.T
+        if isempty(default_argnames) # TODO: Add check on quality of default_values
+            kw_list, default_kw_dict = [getfield(bandit, argname) for argname in argnames], Dict()
+        else
+            kw_list, default_kw_dict = [getfield(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[default_argname]) for default_argname in default_argnames])
+        end
+        τ_update = false
+        if :τ in argnames  # While all the others elements in kw_list work with pointers, hence get updated automatically, τ needs manual update
+            τ_position = findfirst(item -> item==:τ, argnames)  # Store the position
+            τ_update = true
+        end
+        # println(string(optimizer))
+        for i in 1:bandit.T
+            if  τ_update
+                kw_list[τ_position] += 1
+            end
+            # if i<=10
+            #    println(i)
+            #    println(kw_list)
+            # end
             run_step!(bandit)
             verbose && println(bandit)
-            kw_list = update_kw_list(bandit, argnames)
+            # kw_list = update_kw_list(bandit, argnames)  # TODO: Optimize performance, idk how
             # update policy
+            # println(i)
+            # println("k $kw_list")
             if isempty(default_kw_dict)
                 probs(bandit.ξ) .= optimizer(kw_list...)  # The order is mantained by the construction
             else
@@ -191,7 +208,7 @@ module MABStructs
         # println("Game Terminated")
     end
 
-    function reset!(bandit::MABStruct, name::String)
+    function reset!(bandit::MABStruct; name="MAB Experiment"::String)
         bandit.name = name
         fill!(bandit.γ, 0)
         fill!(bandit.reward_vector, 0)

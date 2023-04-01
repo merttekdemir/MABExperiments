@@ -25,7 +25,7 @@ default_values = Dict("ExponentiatedGradient" => Dict(),
 algorithms = [O.ExponentiatedGradient, O.FtrlExponentiatedGradient, O.EXP3, O.ExploreThenCommit,
                        O.UpperConfidenceBound, O.EpsilonGreedy, O.ExpDecayedEpsilonGreedy,
                        O.LinearDecayedEpsilonGreedy, O.Hedge]
-experiments = Dict(algorithm => zeros(M.MABStruct, A, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM) for algorithm in algorithms)
+experiments = Dict(algorithm => [zero(M.MABStruct, A) for _ in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM] for algorithm in algorithms)
 
 function method_args(optimizer::Function, default_values_bool::Bool)
      method = methods(optimizer)[1]
@@ -48,7 +48,7 @@ function experiment_1(A, ξ, algorithms)
             Random.seed!(seeds[j])
 
     #Correct learning rate OMD: √(2*log(length(game.A))/game.T)
-            M.reset!(game, "MAB_experiment_$j")
+            M.reset!(game; name="MAB_experiment_$j")
             M.run!(game, algorithm, argnames, default_argnames, default_values_algo; verbose=false)
             # experiments[algorithm][j] = game
             M.set_instance!(experiments[algorithm][j], game)
@@ -58,3 +58,5 @@ end
 # M.run!(game, O.ExponentiatedGradient, true; kw_dict=Dict(:η => √(2*log(length(game.A))/game.T)))
 
 experiment_1(A, ξ, algorithms);
+
+# There is a bug when rerunning in console
