@@ -1,5 +1,5 @@
 using Random, Distributions, Plots, Statistics, StatsBase
-NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 1000
+NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 100
 NUMBER_OF_ITERATIONS_PER_EXPERIMENT = 10000
 Random.seed!(42)
 seeds = rand(1:10000000, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM)
@@ -55,31 +55,32 @@ function experiment_1(A, ξ, algorithms)
     end
 end
 
-function PlotSeriesOverTime(experiments::Dict{String, Vector{M.MABStruct{DT}}}, MABAttribute::Symbol) where DT <: Tuple{Vararg{Distribution}}
-    #TODO check if attribute in mabstruct attributes
+function PlotSeriesOverTime(experiments::Dict{String, Vector{M.MABStruct{DT}}}, MABField::Symbol) where DT <: Tuple{Vararg{Distribution}}
+    MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
+
     plot_size = length(experiments) * 150
-    plot_title = "Experiment Diganostics For $(String(MABAttribute))"
+    plot_title = "Experiment Diganostics For $(String(MABField))"
     fig = plot(layout=length(experiments), size=(plot_size,plot_size), plot_title=plot_title)
     for (i, algorithm) in enumerate(experiments)
 
-        s = [getfield(experiments[algorithm[1]][j], MABAttribute) for j in 1:length(experiments[algorithm[1]])]
+        data = [getfield(experiments[algorithm[1]][j], MABField) for j in 1:length(experiments[algorithm[1]])]
 
-        if typeof(s) == Vector{Vector{Float64}}
-            sample_mean_over_time = Statistics.mean(s)
-            sample_std_error_over_time = Statistics.std(s, mean=sample_mean_over_time)./sqrt(length(s))
+        if typeof(data) == Vector{Vector{Float64}}
+            sample_mean_over_time = Statistics.mean(data)
+            sample_std_error_over_time = Statistics.std(data, mean=sample_mean_over_time)./sqrt(length(data))
             CI = 1.96.*sample_std_error_over_time
             subplot_title = "$(algorithm[1])"
-            plot!(xlabel="Iteration", ylabel="Regret Fixed", legend=:topleft, title=subplot_title, subplot=i)
-            xaxis = [τ for τ in 1:length(s[1])]
+            plot!(xlabel="Iteration", ylabel="$(String(MABField))", legend=:topleft, title=subplot_title, subplot=i)
+            xaxis = [τ for τ in 1:length(data[1])]
             sublinear_regret = sqrt.(xaxis)
-            plot!(xaxis, sample_mean_over_time, label="Simulated Regret", subplot=i, ribbon=CI)
+            plot!(xaxis, sample_mean_over_time, label="$(String(MABField))", subplot=i, ribbon=CI)
 
-        elseif typeof(s) == Vector{Vector{Int64}}
+        elseif typeof(data) == Vector{Vector{Int64}}
             subplot_title = "$(algorithm[1])"
-            plot!(xlabel="Iteration", ylabel="Regret Fixed", legend=:topleft, title=subplot_title, subplot=i)
-            xaxis = [τ for τ in 1:length(s[1])]
+            plot!(xlabel="Iteration", ylabel="$(String(MABField))", legend=:topleft, title=subplot_title, subplot=i)
+            xaxis = [τ for τ in 1:length(data[1])]
             sublinear_regret = sqrt.(xaxis)
-            plot!(xaxis, StatsBase.mode(s), label="Mode across experiments", subplot=i)
+            plot!(xaxis, StatsBase.mode(data), label="Mode across experiments", subplot=i)
         end
     end
     display(fig)
