@@ -2,6 +2,7 @@ module MABPlots
 using Statistics, Plots, Distributions, StatsBase
 include("MABStruct.jl"); M = MABStructs;
 
+
     function PlotSeriesOverTime(series::Vector{Vector{Float64}})
         sample_mean_over_time = Statistics.mean(series)
         sample_std_error_over_time = Statistics.std(series, mean=sample_mean_over_time)./sqrt(length(series))
@@ -15,7 +16,8 @@ include("MABStruct.jl"); M = MABStructs;
         return p
     end
 
-    function PlotSeriesOverTime(experiments::Dict{String, Vector{M.MABStruct{DT}}}, MABField::Symbol) where DT <: Tuple{Vararg{Distribution}}
+
+    function PlotSeriesOverTime(experiments::Dict, MABField::Symbol)
         MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
     
         plot_size = length(experiments) * 150

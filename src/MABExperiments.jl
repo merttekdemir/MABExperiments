@@ -5,8 +5,8 @@ Random.seed!(42)
 seeds = rand(1:10000000, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM)
 
 include("MABStruct.jl"); M = MABStructs;
-include("OnlineLearningAlgorithms.jl"); O=OnlineLearningAlgorithms;
-include("MABPlots.jl"); P=MABPlots;
+include("OnlineLearningAlgorithms.jl"); O = OnlineLearningAlgorithms;
+include("MABPlots.jl"); P = MABPlots;
 
 A = (Beta(0.15, 0.7), Beta(0.54, 0.2), Beta(0.38, 0.5))
 ξ = Distributions.Categorical([1/3, 1/3, 1/3])
@@ -53,6 +53,7 @@ function experiment_1(A, ξ, algorithms)
             M.set_instance!(experiments[string(algorithm)][j], game)
         end
     end
+    return experiments
 end
 
 function PlotSeriesOverTime(experiments::Dict{String, Vector{M.MABStruct{DT}}}, MABField::Symbol) where DT <: Tuple{Vararg{Distribution}}
@@ -88,5 +89,6 @@ function PlotSeriesOverTime(experiments::Dict{String, Vector{M.MABStruct{DT}}}, 
 end
 # M.run!(game, O.ExponentiatedGradient, true; kw_dict=Dict(:η => √(2*log(length(game.A))/game.T)))
 
-experiment_1(A, ξ, algorithms);
+experiments = experiment_1(A, ξ, algorithms);
 #PlotSeriesOverTime(experiments, :regret_fixed)
+P.PlotSeriesOverTime(experiments, :regret_fixed)
