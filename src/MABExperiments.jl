@@ -1,12 +1,12 @@
-using Random, Distributions
-NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 10
+using Random, Distributions, Plots, Statistics, StatsBase
+NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 100
 NUMBER_OF_ITERATIONS_PER_EXPERIMENT = 10000
 Random.seed!(42)
 seeds = rand(1:10000000, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM)
 
 include("MABStruct.jl"); M = MABStructs;
 include("OnlineLearningAlgorithms.jl"); O=OnlineLearningAlgorithms;
-
+include("MABPlots.jl"); P=MABPlots;
 
 A = (Beta(0.15, 0.7), Beta(0.54, 0.2), Beta(0.38, 0.5))
 ξ = Distributions.Categorical([1/3, 1/3, 1/3])
@@ -25,7 +25,7 @@ default_values = Dict("ExponentiatedGradient" => Dict(),
 algorithms = [O.ExponentiatedGradient, O.FtrlExponentiatedGradient, O.EXP3, O.ExploreThenCommit,
                        O.UpperConfidenceBound, O.EpsilonGreedy, O.ExpDecayedEpsilonGreedy,
                        O.LinearDecayedEpsilonGreedy, O.Hedge]
-experiments = Dict(algorithm => [zero(M.MABStruct, A) for _ in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM] for algorithm in algorithms)
+experiments = Dict(string(algorithm) => [zero(M.MABStruct, A) for i in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM] for algorithm in algorithms)
 
 function method_args(optimizer::Function, default_values_bool::Bool)
      method = methods(optimizer)[1]
@@ -50,13 +50,43 @@ function experiment_1(A, ξ, algorithms)
     #Correct learning rate OMD: √(2*log(length(game.A))/game.T)
             M.reset!(game; name="MAB_experiment_$j")
             M.run!(game, algorithm, argnames, default_argnames, default_values_algo; verbose=false)
-            # experiments[algorithm][j] = game
-            M.set_instance!(experiments[algorithm][j], game)
+            M.set_instance!(experiments[string(algorithm)][j], game)
         end
     end
+end
+
+function PlotSeriesOverTime(experiments::Dict{String, Vector{M.MABStruct{DT}}}, MABField::Symbol) where DT <: Tuple{Vararg{Distribution}}
+    MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
+
+    plot_size = length(experiments) * 150
+    plot_title = "Experiment Diganostics For $(String(MABField))"
+    fig = plot(layout=length(experiments), size=(plot_size,plot_size), plot_title=plot_title)
+    for (i, algorithm) in enumerate(experiments)
+
+        data = [getfield(experiments[algorithm[1]][j], MABField) for j in 1:length(experiments[algorithm[1]])]
+
+        if typeof(data) == Vector{Vector{Float64}}
+            sample_mean_over_time = Statistics.mean(data)
+            sample_std_error_over_time = Statistics.std(data, mean=sample_mean_over_time)./sqrt(length(data))
+            CI = 1.96.*sample_std_error_over_time
+            subplot_title = "$(algorithm[1])"
+            plot!(xlabel="Iteration", ylabel="$(String(MABField))", legend=:topleft, title=subplot_title, subplot=i)
+            xaxis = [τ for τ in 1:length(data[1])]
+            sublinear_regret = sqrt.(xaxis)
+            plot!(xaxis, sample_mean_over_time, label="$(String(MABField))", subplot=i, ribbon=CI)
+
+        elseif typeof(data) == Vector{Vector{Int64}}
+            subplot_title = "$(algorithm[1])"
+            plot!(xlabel="Iteration", ylabel="$(String(MABField))", legend=:topleft, title=subplot_title, subplot=i)
+            xaxis = [τ for τ in 1:length(data[1])]
+            sublinear_regret = sqrt.(xaxis)
+            plot!(xaxis, StatsBase.mode(data), label="Mode across experiments", subplot=i)
+        end
+    end
+    display(fig)
+    return fig
 end
 # M.run!(game, O.ExponentiatedGradient, true; kw_dict=Dict(:η => √(2*log(length(game.A))/game.T)))
 
 experiment_1(A, ξ, algorithms);
-
-# There is a bug when rerunning in console
+#PlotSeriesOverTime(experiments, :regret_fixed)

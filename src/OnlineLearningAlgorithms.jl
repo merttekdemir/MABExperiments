@@ -1,5 +1,4 @@
 module OnlineLearningAlgorithms
-export ExponentiatedGradient
 using Random, Distributions, DataStructures
 
 
@@ -22,9 +21,9 @@ using Random, Distributions, DataStructures
         return updated_probs ./ sum(updated_probs)
     end
 
-    function EXP3(ξ::Categorical{Float64, Vector{Float64}}, reward_vector::Vector{Float64}, γ::Vector{Int8}, T::Int64, τ::Int64; η=1/sqrt(T)::Float64)
+    function EXP3(ξ::Categorical{Float64, Vector{Float64}}, reward_vector::Vector{Float64}, γ::Vector{Int64}, T::Int64, τ::Int64; η=1/sqrt(T)::Float64)
         most_recent_action = γ[τ]
-        loss = -1 * reward_vector[most_recent_action]/ probs(ξ)[most_recent_action]  # observed loss
+        loss = -1.0 * reward_vector[most_recent_action]/ probs(ξ)[most_recent_action]  # observed loss
         loss_vector = zeros(Float64, length(reward_vector))
         loss_vector[most_recent_action] = loss
         return probs(ξ) .* exp.(-η.*loss_vector) ./ sum(probs(ξ) .* exp.(-η.*loss_vector))
@@ -82,7 +81,7 @@ using Random, Distributions, DataStructures
     #    end
     #end
 
-    function ExploreThenCommit(ξ::Categorical{Float64, Vector{Float64}}, τ::Int64, γ::Vector{Int8}, cumulative_reward_per_arm_bandit::Vector{Float64}, choices_per_arm::Vector{Int64}; m=10::Int64)
+    function ExploreThenCommit(ξ::Categorical{Float64, Vector{Float64}}, τ::Int64, γ::Vector{Int64}, cumulative_reward_per_arm_bandit::Vector{Float64}, choices_per_arm::Vector{Int64}; m=10::Int64)
         d = length(cumulative_reward_per_arm_bandit)
 
         if τ <= d*m
