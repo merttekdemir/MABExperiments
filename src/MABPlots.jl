@@ -2,25 +2,10 @@ module MABPlots
 using Statistics, Plots, Distributions, StatsBase
 include("MABStruct.jl"); M = MABStructs;
 
-
-    function PlotSeriesOverTime(series::Vector{Vector{Float64}})
-        sample_mean_over_time = Statistics.mean(series)
-        sample_std_error_over_time = Statistics.std(series, mean=sample_mean_over_time)./sqrt(length(series))
-        p = plot(xlabel="Iteration", ylabel="Regret Fixed", legend=:topleft)
-        xaxis = [τ for τ in 1:length(series[1])]
-        sublinear_regret = sqrt.(xaxis)
-        p = plot!(xaxis, sample_mean_over_time, label="Simulated Regret", ribbon=(sample_mean_over_time .- 1.96.*sample_std_error_over_time, sample_mean_over_time .+ 1.96.*sample_std_error_over_time))
-        #plot!(xaxis, 100 .* sublinear_regret, label="Sublinear Regret Benchmark", linestlye=:dash)
-        # plot!(xaxis, sublinear_regret./sample_mean_over_time, label="Sublinear Regret Benchmark", linestlye=:dash)
-        # plot!(xaxis, xaxis, label="45 degree line")
-        return p
-    end
-
-
-    function PlotSeriesOverTime(experiments::Dict, MABField::Symbol)
+    function PlotSeriesOverTime(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}) where DT <: Tuple{Vararg{Distribution}}
         MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
     
-        plot_size = length(experiments) * 150
+        plot_size = length(experiments) * 300
         plot_title = "Experiment Diganostics For $(String(MABField))"
         fig = plot(layout=length(experiments), size=(plot_size,plot_size), plot_title=plot_title)
         for (i, algorithm) in enumerate(experiments)
@@ -45,13 +30,28 @@ include("MABStruct.jl"); M = MABStructs;
                 plot!(xaxis, StatsBase.mode(data), label="Mode across experiments", subplot=i)
             end
         end
-        display(fig)
+        filename === nothing || savefig(fig, filename)
         return fig
     end
 
-    # function PlotDiagnostics(MABExperiments::Vector{MABStruct})
-
-
-    # end
+    function PlotSeriesHistogram(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}) where DT <: Tuple{Vararg{Distribution}}
+        MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
+        plot_size = length(experiments) * 300
+        plot_title = "Experiment Diganostics For $(String(MABField))"
+        fig = plot(layout=length(experiments), size=(plot_size,plot_size), title=plot_title)
+        for (i, algorithm) in enumerate(experiments)
+            data = [getfield(experiments[algorithm[1]][j], MABField) for j in 1:length(experiments[algorithm[1]])]
+            (i == 1 && (typeof(data) != Vector{Vector{Int64}})) && throw(ArgumentError("MABField is not a suitable field for a histogram"))                
+            subplot_title = "$(algorithm[1])"
+            plot!(xlabel="Arm", ylabel="$(String(MABField))", legend=:topleft, title=subplot_title, subplot=i)
+            cnts = StatsBase.mode(data)
+            cntmap = StatsBase.countmap(cnts)
+            x = sort(collect(keys(cntmap)))
+            y = [cntmap[i] for i in x]
+            bar!(x, y, label="Mode At Each Time Step", bar_width=1, subplot=i, xticks=x)
+        end
+        filename === nothing || savefig(fig, filename)
+        return fig
+    end
 
 end #module
