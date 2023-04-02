@@ -29,12 +29,12 @@ PlotSeriesOverTime:
 
   - MABField: γ  
     FileName: "ExperimentOutputs/plot_of_action_over_time"
-    DisplayPlot: true
+    DisplayPlot: false
 
 PlotSeriesHistogram:
   - MABField: γ  
     FileName: "ExperimentOutputs/plot_of_action_histogram"
-    DisplayPlot: true
+    DisplayPlot: false
 
 Algorithms: ["ExponentiatedGradient", "FtrlExponentiatedGradient", "EXP3", "ExploreThenCommit", "UpperConfidenceBound", "EpsilonGreedy", "LinearDecayedEpsilonGreedy", "ExpDecayedEpsilonGreedy", "Hedge"]
 
