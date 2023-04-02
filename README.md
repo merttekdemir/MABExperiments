@@ -41,7 +41,7 @@ Depending on the feedback given to the learner there are also several possible s
 * Bandit setting: player only observes $f_τ(i_τ)$
 
 
-In studying such OCO problems the goal is to design an online decision making algorithm to help the learner choose good actions. The quality of the learns actions is measured through a notion of regret. Different notions of regret may be defined for different problem contexts. For adversarial algorithms the tradional notion of regret measures at each time step $T$ the difference between the cumulative losses the learner has observed from realized actions and the loss the learner could have observed by playing the best fixed action in hindsight. The goal of adversairal online learning algorithms is to minimize this regret:
+In studying such OCO problems the goal is to design an online decision making algorithm to help the learner choose good actions. The quality of the learners actions is measured through a notion of regret. Different notions of regret may be defined for different problem contexts. For adversarial algorithms the tradional notion of regret measures at each time step $T$ the difference between the cumulative losses the learner has observed from realized actions and the loss the learner could have observed by playing the best fixed action in hindsight. The goal of adversairal online learning algorithms is to minimize this regret:
 
 ```math
 \mathcal{R}_T = \sum_{τ=1}^T f_τ(i_τ)- \min_{i^*\in[A]} \sum_{τ=1}^T f_τ(i^*)
@@ -50,10 +50,10 @@ In studying such OCO problems the goal is to design an online decision making al
 Instead for the stochastic setting the traditional notion of regret measures at each time step $T$ the difference between the expected value of the chosen action at that time step compared to the best action in expectation. Again the goal of stochastic online learning algorithms is to minimize this regret:
 
 ```math
-\mathcal{R}_T = \mathcal{E} [ \sum_{τ=1}^T f_τ(i_τ)] - \min_{i\in[A]} \mu_i
+\mathcal{R}_T = \mathbb{E} [ \sum_{τ=1}^T f_τ(i_τ)] - \min_{i\in[A]} \mu_i
 ```
 
-The OCO settings listed above study the trade-off between exploration and exploitation. In particular, at each time step $t$ actions can be thought of as associating to two key outputs; the loss suffered (reward gained) and feedback received about the action by having taken that action. Thus, to minimize regret the learner must devise a strategy balancing gaining information for future exploitation and exploiting his learning's. The simulations in this repository allows you to plot different types of OCO algorithms against different types of benchmarks.
+The OCO settings listed above study the trade-off between exploration and exploitation. In particular, at each time step $τ$ actions can be thought of as associating to two key outputs; the loss suffered (reward gained) and feedback received about the action by having taken that action. Thus, to minimize regret the learner must devise a strategy balancing gaining information for future exploitation and exploiting his learning's. The simulations in this repository allows you to plot different types of OCO algorithms against different types of benchmarks.
 ## Repository Overview
 
 ### Multi-Armed Bandit Game
