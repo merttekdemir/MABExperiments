@@ -33,6 +33,8 @@ PlotSeriesHistogram:
   - MABField: γ  
     FileName: "ExperimentOutputs/plot_of_action_histogram"
 
+Algorithms: ["ExponentiatedGradient", "FtrlExponentiatedGradient", "EXP3", "ExploreThenCommit", "UpperConfidenceBound", "EpsilonGreedy", "LinearDecayedEpsilonGreedy", "ExpDecayedEpsilonGreedy", "Hedge"]
+
 ExponentiatedGradientDefaultValues:
   - η: 0.01
 

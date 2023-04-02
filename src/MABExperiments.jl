@@ -30,9 +30,11 @@ default_values = Dict("ExponentiatedGradient" => get(CONF, "ExponentiatedGradien
 
 for algorithm in keys(default_values)
     if length(default_values[algorithm]) > 1
-        default_values[algorithm] = merge([i for i in default_values[algorithm]]...)
+        default_values[algorithm] = [merge([i for i in default_values[algorithm]]...)]
     end
 end
+
+algorithms = [getfield(O, Symbol(algorithm)) for algorithm in CONF["Algorithms"]]
 
 experiments = Dict(string(algorithm) => [zero(M.MABStruct, A) for _ in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM] for algorithm in algorithms)
 
