@@ -86,10 +86,6 @@ Christian Kroer, Columbia University
         average_reward_fixed::Vector{Float64}
         regret_fixed::Vector{Float64}
         regret_pseudo::Vector{Float64}
-        best_dynamic_choice::Vector{Int64}
-        cumulative_reward_dynamic::Vector{Float64}
-        average_reward_dynamic::Vector{Float64}
-        regret_dynamic::Vector{Float64}
         τ::Int64
 
         function MABStruct(T::Int64, A::DT, ξ::Categorical, name::String) where DT <: Tuple{Vararg{Distribution}}
@@ -115,11 +111,6 @@ Christian Kroer, Columbia University
             average_reward_fixed = zeros(Float64, T)
             regret_fixed = zeros(Float64, T)
             regret_pseudo = zeros(Float64, T)
-            best_dynamic_choice = zeros(Int64, T)
-            best_dynamic_choice = zeros(Int64, T)
-            cumulative_reward_dynamic = zeros(Float64, T)
-            average_reward_dynamic = zeros(Float64, T)
-            regret_dynamic = zeros(Float64, T)
 
             τ = 0
 
@@ -129,9 +120,7 @@ Christian Kroer, Columbia University
                         cumulative_reward_per_arm_bandit, cumulative_reward_per_arm, 
                         average_reward_per_arm, average_reward_per_arm_bandit,
                         best_fixed_choice, cumulative_reward_fixed, 
-                        average_reward_fixed, regret_fixed, regret_pseudo, 
-                        best_dynamic_choice, cumulative_reward_dynamic, 
-                        average_reward_dynamic, regret_dynamic, τ
+                        average_reward_fixed, regret_fixed, regret_pseudo, τ
                         )
         end
     end
@@ -178,11 +167,6 @@ Extends the zero method to MABStruct objects.
         bandit.average_reward_fixed = copy.(bandit_new.average_reward_fixed)
         bandit.regret_fixed = copy.(bandit_new.regret_fixed)
         bandit.regret_pseudo = copy.(bandit_new.regret_pseudo)
-        #TODO define bdc and see if we update elementwise or vectorwise
-        # bandit.best_dynamic_choice .= bdc()
-        # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
-        # bandit.average_reward_dynamic = zeros(Float64, T)
-        # bandit.regret_dynamic = bandit_other.regret_dynamic
         return 
     end
 
@@ -290,12 +274,8 @@ Prints an instance of the game for full information.
         println(io, "best_fixed_choice: $(bandit.best_fixed_choice)")
         println(io, "cumulative_reward_fixed: $(bandit.cumulative_reward_fixed)")
         println(io, "average_reward_fixed: $(bandit.average_reward_fixed)")
-        println(io, "best_dynamic_choice: $(bandit.best_dynamic_choice)")
-        println(io, "cumulative_reward_dynamic: $(bandit.cumulative_reward_dynamic)")
-        println(io, "average_reward_dynamic: $(bandit.average_reward_dynamic)")
         println(io, "regret_fixed: $(bandit.regret_fixed)")
         println(io, "regret_pseudo: $(bandit.regret_pseudo)")
-        println(io, "regret_dynamic: $(bandit.regret_dynamic)")
     end
 
 #---------------------------------------------------------------------------------------------------
@@ -411,10 +391,6 @@ Initialise the game to constructor conditions.
         fill!(bandit.cumulative_reward_fixed, 0)
         fill!(bandit.average_reward_fixed, 0)
         fill!(bandit.regret_fixed, 0)
-        fill!(bandit.best_dynamic_choice, 0)
-        fill!(bandit.cumulative_reward_dynamic, 0)
-        fill!(bandit.average_reward_dynamic, 0)
-        fill!(bandit.regret_dynamic, 0)
         fill!(bandit.regret_pseudo, 0)
         bandit.τ = 0
         return

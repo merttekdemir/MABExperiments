@@ -58,10 +58,7 @@ function test_struct_type(game)
     @test game.cumulative_reward_fixed isa Vector{Float64} 
     @test game.average_reward_fixed isa Vector{Float64} 
     @test game.regret_fixed isa Vector{Float64}
-    @test game.best_dynamic_choice isa Vector{Int64} 
-    @test game.cumulative_reward_dynamic isa Vector{Float64} 
-    @test game.average_reward_dynamic isa Vector{Float64} 
-    @test game.regret_dynamic isa Vector{Float64}
+    @test game.regret_pseudo isa Vector{Float64}
 end
 
 
@@ -83,10 +80,7 @@ function test_struct_length(game)
     @test length(game.cumulative_reward_fixed) == game.T
     @test length(game.average_reward_fixed) == game.T
     @test length(game.regret_fixed) == game.T
-    @test length(game.best_dynamic_choice) == game.T
-    @test length(game.cumulative_reward_dynamic) == game.T
-    @test length(game.average_reward_dynamic) == game.T 
-    @test length(game.regret_dynamic) == game.T 
+    @test length(game.regret_pseudo) == game.T 
 end
 
 
@@ -298,10 +292,7 @@ function test_reset_content!(game::M.MABStruct)
     @test all(game.cumulative_reward_fixed .== game_new.cumulative_reward_fixed)
     @test all(game.average_reward_fixed .== game_new.average_reward_fixed)
     @test all(game.regret_fixed .== game_new.regret_fixed)
-    @test all(game.best_dynamic_choice .== game_new.best_dynamic_choice)
-    @test all(game.cumulative_reward_dynamic .== game_new.cumulative_reward_dynamic)
-    @test all(game.average_reward_dynamic .== game_new.average_reward_dynamic)
-    @test all(game.regret_dynamic .== game_new.regret_dynamic)
+    @test all(game.regret_pseudo .== game_new.regret_pseudo)
 end
 
 
@@ -324,10 +315,7 @@ function test_set_instance(game)
     fill!(game.cumulative_reward_fixed, 2.0)
     fill!(game.average_reward_fixed, 3.0)
     fill!(game.regret_fixed, 3.0)
-    fill!(game.best_dynamic_choice, 2)
-    fill!(game.cumulative_reward_dynamic, 3.0)
-    fill!(game.average_reward_dynamic, 3.0)
-    fill!(game.regret_dynamic, 3.0)
+    fill!(game.regret_pseudo, 3.0)
 
     # Set the new game to our argument game
     M.set_instance!(game_new, game)
