@@ -30,7 +30,8 @@ default_values = Dict("ExponentiatedGradient" => Dict(),
 algorithms = [O.ExponentiatedGradient, O.FtrlExponentiatedGradient, O.EXP3, O.ExploreThenCommit,
                        O.UpperConfidenceBound, O.EpsilonGreedy, O.ExpDecayedEpsilonGreedy,
                        O.LinearDecayedEpsilonGreedy, O.Hedge]
-experiments = Dict(string(algorithm) => [zero(M.MABStruct, A) for i in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM] for algorithm in algorithms)
+
+experiments = Dict(string(algorithm) => zeros(M.MABStruct, A, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM) for algorithm in algorithms)
 
 function method_args(optimizer::Function, default_values_bool::Bool)
      method = methods(optimizer)[1]
@@ -76,3 +77,5 @@ if haskey(CONF, "PlotSeriesHistogram")
         P.PlotSeriesHistogram(experiments, Symbol(i["MABField"]); filename=i["FileName"])
     end
 end
+
+println("Experiment Terminated Successfully")
