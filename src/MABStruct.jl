@@ -175,7 +175,7 @@ module MABStructs
         if isempty(default_argnames) # TODO: Add check on quality of default_values
             kw_list, default_kw_dict = [getfield(bandit, argname) for argname in argnames], Dict()
         else
-            kw_list, default_kw_dict = [getfield(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[default_argname]) for default_argname in default_argnames])
+            kw_list, default_kw_dict = [getfield(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[string(default_argname)]) for default_argname in default_argnames])
         end
         τ_update = false
         if :τ in argnames  # While all the others elements in kw_list work with pointers, hence get updated automatically, τ needs manual update

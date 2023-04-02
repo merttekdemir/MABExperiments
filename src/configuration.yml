@@ -32,3 +32,32 @@ PlotSeriesOverTime:
 PlotSeriesHistogram:
   - MABField: γ  
     FileName: "ExperimentOutputs/plot_of_action_histogram"
+
+ExponentiatedGradientDefaultValues:
+  - η: 0.01
+
+FtrlExponentiatedGradientDefaultValues:
+  - α: 0.8493218002880191 #α=1/sqrt(log(length(A)))
+
+EXP3DefaultValues:
+  - η: 0.01 #η=1/sqrt(NUMBER_OF_ITERATIONS_PER_EXPERIMENT)
+
+ExploreThenCommitDefaultValues:
+  - m: 10
+
+UpperConfidenceBoundDefaultValues:
+  - α: 3
+
+EpsilonGreedyDefaultValues:
+  - ϵ: 0.1
+
+LinearDecayedEpsilonGreedyDefaultValues:
+  - ϵ_start: 1.0
+  - ϵ_end: 0.0
+
+ExpDecayedEpsilonGreedyDefaultValues:
+  - ϵ_start: 1.0
+  - ϵ_end: 0.001
+
+HedgeDefaultValues:
+  - η: 0.1

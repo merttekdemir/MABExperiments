@@ -1,6 +1,5 @@
 using Random, Distributions, Plots, Statistics, StatsBase, YAML
 CONF = YAML.load(open("src/configuration.yml"))
-
 NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = CONF["NUMBER_OF_EXPERIMENTS_PER_ALGORITHM"]
 NUMBER_OF_ITERATIONS_PER_EXPERIMENT = CONF["NUMBER_OF_ITERATIONS_PER_EXPERIMENT"]
 
@@ -15,21 +14,25 @@ include("MABPlots.jl"); P = MABPlots;
 A = Tuple(getfield(Distributions, Symbol(i["Dist"]))(i["Params"]...) for i in CONF["A"])
 ξ = getfield(Distributions, Symbol(CONF["ξ"][1]["Dist"]))(CONF["ξ"][1]["Params"]...)
 
-default_values = Dict("ExponentiatedGradient" => Dict(),
-                      "FtrlExponentiatedGradient" => Dict(),
-                      "EXP3" => Dict(),
-                      "ImplicityNormalizedForecaster" => Dict(),
-                      "ExploreThenCommit" => Dict(),
-                      "UpperConfidenceBound" => Dict(),
-                      #"EpsilonGreedy" => Dict(),
-                      "LinearDecayedEpsilonGreedy" => Dict(),
-                      "ExpDecayedEpsilonGreedy" => Dict(),
-                      "Hedge" => Dict(),
+
+default_values = Dict("ExponentiatedGradient" => get(CONF, "ExponentiatedGradientDefaultValues", [Dict()]),
+                      "FtrlExponentiatedGradient" => get(CONF, "FtrlExponentiatedGradientDefaultValues", [Dict()]),
+                      "EXP3" => get(CONF, "EXP3DefaultValues", [Dict()]),
+                      "ImplicityNormalizedForecaster" => get(CONF, "ImplicityNormalizedForecasterDefaultValues", [Dict()]),
+                      "ExploreThenCommit" => get(CONF, "ExploreThenCommitDefaultValues", [Dict()]),
+                      "UpperConfidenceBound" => get(CONF, "UpperConfidenceBoundDefaultValues", [Dict()]),
+                      "EpsilonGreedy" => get(CONF, "EpsilonGreedyDefaultValues", [Dict()]),
+                      "LinearDecayedEpsilonGreedy" => get(CONF, "LinearDecayedEpsilonGreedyDefaultValues", [Dict()]),
+                      "ExpDecayedEpsilonGreedy" => get(CONF, "ExpDecayedEpsilonGreedyDefaultValues", [Dict()]),
+                      "Hedge" => get(CONF, "HedgeDefaultValues", [Dict()]),
 )  # Define it as a Dict of Dict, first key is the algorithm, second set of keys is the parameter per algorithm, getting it from the config would be optimal
 # Define a function that extracts the argument names from the algorithms definition
-algorithms = [O.ExponentiatedGradient, O.FtrlExponentiatedGradient, O.EXP3, O.ExploreThenCommit,
-                       O.UpperConfidenceBound, O.ExpDecayedEpsilonGreedy,
-                       O.LinearDecayedEpsilonGreedy, O.Hedge]
+
+for algorithm in keys(default_values)
+    if length(default_values[algorithm]) > 1
+        default_values[algorithm] = merge([i for i in default_values[algorithm]]...)
+    end
+end
 
 experiments = Dict(string(algorithm) => [zero(M.MABStruct, A) for _ in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM] for algorithm in algorithms)
 
@@ -46,7 +49,7 @@ function method_args(optimizer::Function, default_values_bool::Bool)
 function experiment_1(A, ξ, algorithms)
     game = M.MABStruct(NUMBER_OF_ITERATIONS_PER_EXPERIMENT, A, ξ, "MAB_Experiment_1")
     for algorithm in algorithms
-        default_values_algo = default_values[string(algorithm)]
+        default_values_algo = default_values[string(algorithm)][1]
         argnames, default_argnames = method_args(algorithm, isempty(default_values_algo))
        
 
@@ -67,7 +70,7 @@ function experiment_2(A, ξ, algorithms)
     
     @Threads.threads for algorithm in algorithms
         game = M.MABStruct(NUMBER_OF_ITERATIONS_PER_EXPERIMENT, A, ξ, "$(string(algorithm)) MAB_Experiment_1")
-        default_values_algo = default_values[string(algorithm)]
+        default_values_algo = default_values[string(algorithm)][1]
         argnames, default_argnames = method_args(algorithm, isempty(default_values_algo))
        
 

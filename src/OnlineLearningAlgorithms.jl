@@ -129,7 +129,7 @@ using Random, Distributions, DataStructures
 
     function LinearDecayedEpsilonGreedy(T::Int64, τ::Int64, ξ::Categorical{Float64, Vector{Float64}}, average_reward_per_arm_bandit::Vector{Float64};ϵ_start=1.0::Float64, ϵ_end=0.0::Float64)
         probs(ξ) .*= 0
-        ϵ = 1 - ((ϵ_start - ϵ_end)/T)*τ
+        ϵ = ϵ_start - ((ϵ_start - ϵ_end)/T)*τ
         if rand(Uniform(0, 1)) < ϵ
             arm = rand(1:length(average_reward_per_arm_bandit))
             probs(ξ)[arm] = 1
