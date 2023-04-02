@@ -30,11 +30,11 @@ In each round $τ=1,\ldots,T$:
 
 
 Depending on the power of the adversary there are several possible setting:
-```math
-    * Stochastic setting: $f_1,\ldots,f_T$ are i.i.d samples of a fixed distribution
+
+    * Stochastic setting: `$f_1,\ldots,f_T$` are i.i.d samples of a fixed distribution
     * Oblivious adversary setting: $f_1,\ldots,f_T$ are arbritary but decided before the game starts (i.e. independent of the player's actions)
     * Adaptive adversary setting: For each $t$, $f_t$ depends on $i_1,\ldots,i_τ$
-```
+
 Depending on the feedback given to the learner there are also several possible settings:
 
 
