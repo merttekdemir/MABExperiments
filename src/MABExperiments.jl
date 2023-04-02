@@ -21,17 +21,17 @@ default_values = Dict("ExponentiatedGradient" => Dict(),
                       "ImplicityNormalizedForecaster" => Dict(),
                       "ExploreThenCommit" => Dict(),
                       "UpperConfidenceBound" => Dict(),
-                      "EpsilonGreedy" => Dict(),
+                      #"EpsilonGreedy" => Dict(),
                       "LinearDecayedEpsilonGreedy" => Dict(),
                       "ExpDecayedEpsilonGreedy" => Dict(),
                       "Hedge" => Dict(),
 )  # Define it as a Dict of Dict, first key is the algorithm, second set of keys is the parameter per algorithm, getting it from the config would be optimal
 # Define a function that extracts the argument names from the algorithms definition
 algorithms = [O.ExponentiatedGradient, O.FtrlExponentiatedGradient, O.EXP3, O.ExploreThenCommit,
-                       O.UpperConfidenceBound, O.EpsilonGreedy, O.ExpDecayedEpsilonGreedy,
+                       O.UpperConfidenceBound, O.ExpDecayedEpsilonGreedy,
                        O.LinearDecayedEpsilonGreedy, O.Hedge]
 
-experiments = Dict(string(algorithm) => zeros(M.MABStruct, A, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM) for algorithm in algorithms)
+experiments = Dict(string(algorithm) => [zero(M.MABStruct, A) for _ in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM] for algorithm in algorithms)
 
 function method_args(optimizer::Function, default_values_bool::Bool)
      method = methods(optimizer)[1]
@@ -62,8 +62,28 @@ function experiment_1(A, ξ, algorithms)
     return experiments
 end
 
+function experiment_2(A, ξ, algorithms)
 
-experiments = experiment_1(A, ξ, algorithms);
+    
+    @Threads.threads for algorithm in algorithms
+        game = M.MABStruct(NUMBER_OF_ITERATIONS_PER_EXPERIMENT, A, ξ, "$(string(algorithm)) MAB_Experiment_1")
+        default_values_algo = default_values[string(algorithm)]
+        argnames, default_argnames = method_args(algorithm, isempty(default_values_algo))
+       
+
+        for j in 1:NUMBER_OF_EXPERIMENTS_PER_ALGORITHM
+            Random.seed!(seeds[j])
+
+    #Correct learning rate OMD: √(2*log(length(game.A))/game.T)
+            M.reset!(game; name="$(string(algorithm))_MAB_Experiment_$j")
+            M.run!(game, algorithm, argnames, default_argnames, default_values_algo; verbose=false)
+            M.set_instance!(experiments[string(algorithm)][j], game)
+        end
+    end
+    return experiments
+end
+
+experiments = experiment_2(A, ξ, algorithms);
 
 
 if haskey(CONF, "PlotSeriesOverTime")

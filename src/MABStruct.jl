@@ -6,6 +6,7 @@ module MABStructs
         T::Int64
         A::DT
         ξ::Categorical{Float64, Vector{Float64}}
+        ξ_start::Categorical{Float64, Vector{Float64}}
         γ::Vector{Int64}
         reward_vector::Vector{Float64}
         choices_per_arm::Vector{Int64}
@@ -32,6 +33,7 @@ module MABStructs
             n_actions == ncategories(ξ) || throw(ArgumentError("Error in construction"))
             
             # Initialised values
+            ξ_start = Distributions.Categorical(copy(probs(ξ)))
             γ = zeros(Int64, T)
             reward_vector = zeros(Float64, n_actions)
             choices_per_arm = zeros(Int64, n_actions)
@@ -53,7 +55,7 @@ module MABStructs
 
             τ = 0
 
-            return new{DT}(name, T, A, ξ, γ, reward_vector, 
+            return new{DT}(name, T, A, ξ, ξ_start, γ, reward_vector, 
                         choices_per_arm, algorithm_reward,
                         algorithm_cumulative_reward, sequence_of_rewards,
                         cumulative_reward_per_arm_bandit, cumulative_reward_per_arm, 
@@ -77,6 +79,7 @@ module MABStructs
     function set_instance!(bandit::MABStruct, bandit_new::MABStruct) # T <: Tuple{Vararg{Distribution}}
         bandit.name = bandit_new.name
         bandit.ξ = bandit_new.ξ
+        bandit.ξ_start = bandit_new.ξ_start
         bandit.τ = copy.(bandit_new.τ)
         bandit.γ = copy.(bandit_new.γ)
         bandit.reward_vector = copy.(bandit_new.reward_vector)
@@ -201,13 +204,15 @@ module MABStructs
             end
             # println("sum")
             # println(sum(probs(bandit.ξ)) - 1.0)
-            @assert abs(sum(probs(bandit.ξ)) - 1.0) < 1e-5
+            #@assert abs(sum(probs(bandit.ξ)) - 1.0) < 1e-5
+            @assert sum(probs(bandit.ξ)) ≈ 1.0
         end
         # println("Game Terminated")
     end
 
     function reset!(bandit::MABStruct; name="MAB Experiment"::String)
         bandit.name = name
+        bandit.ξ = Distributions.Categorical(copy(probs(bandit.ξ_start)))
         fill!(bandit.γ, 0)
         fill!(bandit.reward_vector, 0)
         fill!(bandit.choices_per_arm, 0)
