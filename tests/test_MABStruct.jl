@@ -195,7 +195,7 @@ end
 function test_get_kw_list(game)
     # Set the parameters
     algorithm = O.EXP3
-    default_values = Dict("EXP3" => Dict{Symbol, Any}([(:η, 0.3)]))
+    default_values = Dict("EXP3" => Dict{Any, Any}([("η", 0.3)]))
     default_values_algo = default_values[string(algorithm)]
     argnames = [:ξ, :reward_vector, :γ, :T, :τ]
     default_argnames = [:η]
@@ -225,11 +225,11 @@ function test_behavior_update_kw_list(game)
     # Set Vector argnames and obtain initial kw_list
     argnames = [:γ, :reward_vector]
     algorithm = O.EXP3
-    default_values = Dict("EXP3" => Dict{Symbol, Any}([(:η, 0.3)]))
+    default_values = Dict("EXP3" => Dict{Any, Any}([("η", 0.3)]))
     default_values_algo = default_values[string(algorithm)]
     _, _, kw_list, _ = M.get_kw_list(game, argnames, Symbol[], default_values_algo)
 
-    # define a kw_list which does not update with the update in game
+    # Define a kw_list which does not update with the update in game
     kw_list_unrelated = [copy(getfield(game, argname)) for argname in argnames]  # copy does not point at the attributes
 
     # Update some game attributes
@@ -244,8 +244,9 @@ end
 
 
 function test_run(game)
+    # Set parameters
     algorithm = O.EXP3
-    default_values = Dict("EXP3" => Dict{Symbol, Any}([(:η, 0.3)]))
+    default_values = Dict("EXP3" => Dict{Any, Any}([("η", 0.3)]))
     default_values_algo = default_values[string(algorithm)]
     argnames = [:ξ, :reward_vector, :γ, :T, :τ]
     default_argnames = [:η]

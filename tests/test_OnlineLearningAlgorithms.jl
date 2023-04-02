@@ -6,7 +6,7 @@ include(joinpath("..", "src", "OnlineLearningAlgorithms.jl")); O = OnlineLearnin
 
 """Testing functions"""
 
-function test_degenerate_case(algorithm::Function, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Symbol, Any})
+function test_degenerate_case(algorithm::Function, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict)
     T_degenerate = 100
     A_degenerate = (Distributions.Bernoulli(0), Distributions.Bernoulli(1), Distributions.Bernoulli(0))
     game_degenerate = M.MABStruct(T_degenerate, A_degenerate, Distributions.Categorical(3))
@@ -25,7 +25,7 @@ end
         argnames = Symbol[:ξ, :reward_vector]
         default_argnames = Symbol[:η]
         kw_list = [Distributions.Categorical(3), [0.2, 1, 0.3]]
-        default_values_algo = Dict{Symbol, Any}(:η => 0.05)
+        default_values_algo = Dict{Any, Any}("η" => 0.05)
         
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; η=-2)
@@ -52,7 +52,7 @@ end
         argnames = Symbol[:τ, :cumulative_reward_per_arm]
         kw_list = [10, [100.0, 200.0, 100.0]]
         default_argnames = Symbol[:α]
-        default_values_algo = Dict{Symbol, Any}(:α => 0.05)
+        default_values_algo = Dict{Any, Any}("α" => 0.05)
         
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; α=-2.0)
@@ -75,7 +75,7 @@ end
         argnames = Symbol[:ξ, :reward_vector, :γ, :T, :τ]
         kw_list = [Distributions.Categorical(3), [0.2, 1, 0.3], Int64[0 for _ in 1:100], 100, 2]
         default_argnames = Symbol[:η]
-        default_values_algo = Dict{Symbol, Any}(:η => 0.05)
+        default_values_algo = Dict{Any, Any}("η" => 0.05)
         
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; η=-2.0)
@@ -106,7 +106,7 @@ end
         argnames = Symbol[:ξ, :τ, :cumulative_reward_per_arm_bandit, :choices_per_arm]
         kw_list = [Distributions.Categorical(3), 40, [100.0, 200.0, 100.0], [2, 2, 2]]
         default_argnames = Symbol[:m]
-        default_values_algo = Dict{Symbol, Any}(:m => 10)
+        default_values_algo = Dict{Any, Any}("m" => 10)
 
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; m=-2)
@@ -130,7 +130,7 @@ end
         argnames = Symbol[:ξ, :τ, :choices_per_arm, :average_reward_per_arm_bandit]
         kw_list = [Distributions.Categorical(3), 30, [10, 15, 5], [0.5, 0.7, 0.2]]
         default_argnames = Symbol[:α]
-        default_values_algo = Dict{Symbol, Any}(:α => 3)
+        default_values_algo = Dict{Any, Any}("α" => 3)
 
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; α=1)
@@ -140,8 +140,9 @@ end
 
         # Test Proper Update  # TODO: FIX
         ξ_new = Distributions.Categorical(3)
-        lower_confidence_band = -1 .* kw_list[4] .- sqrt(2*default_values_algo[:α]*log(kw_list[2]))./kw_list[3]
-        @test argmin(lower_confidence_band) == argmax(algorithm(kw_list...; default_values_algo...))
+        lower_confidence_band = -1 .* kw_list[4] .- sqrt(2*default_values_algo["α"]*log(kw_list[2]))./kw_list[3]
+        default_kw_dict = Dict{Any, Any}(:α => 3)
+        @test argmin(lower_confidence_band) == argmax(algorithm(kw_list...; default_kw_dict...))
     end
 
     @testset "EpsilonGreedy" begin
@@ -149,7 +150,7 @@ end
         argnames = Symbol[:ξ, :average_reward_per_arm_bandit]
         kw_list = [Distributions.Categorical(3), [0.0, 1.0, 0.0]]
         default_argnames = Symbol[:ϵ]
-        default_values_algo = Dict{Symbol, Any}(:ϵ => 0.25)
+        default_values_algo = Dict{Any, Any}("ϵ" => 0.25)
         
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; ϵ=1.2)
@@ -173,7 +174,7 @@ end
         argnames = Symbol[:T, :τ, :ξ, :reward_vector]
         kw_list = [100, 10, Distributions.Categorical(3), [0.0, 1.0, 0.0]]
         default_argnames = Symbol[:ϵ_start, :ϵ_end]
-        default_values_algo = Dict{Symbol, Any}(:ϵ_start => 1.0, :ϵ_end => 0.0)
+        default_values_algo = Dict{Any, Any}("ϵ_start" => 1.0, "ϵ_end" => 0.0)
 
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; ϵ_start=1.5)
@@ -200,7 +201,7 @@ end
         argnames = Symbol[:T, :τ, :ξ, :average_reward_per_arm_bandit]
         kw_list = [100, 10, Distributions.Categorical(3), [0.0, 1.0, 0.0]]
         default_argnames = Symbol[:ϵ_start, :ϵ_end]
-        default_values_algo = Dict{Symbol, Any}(:ϵ_start => 1.0, :ϵ_end => 0.0001)
+        default_values_algo = Dict{Any, Any}("ϵ_start" => 1.0, "ϵ_end" => 0.0001)
         
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; ϵ_start=1.5)
@@ -227,7 +228,7 @@ end
         argnames = Symbol[:ξ, :reward_vector]
         kw_list = [Distributions.Categorical(3), [0.1, 0.5, 0.2]]
         default_argnames = Symbol[:η]
-        default_values_algo = Dict{Symbol, Any}(:η => 0.05)
+        default_values_algo = Dict{Any, Any}("η" => 0.05)
         
         # Test Argument Error
         @test_throws ArgumentError algorithm(kw_list...; η=-2)
