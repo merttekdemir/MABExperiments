@@ -1,20 +1,68 @@
 
 NUMBER_OF_EXPERIMENTS_PER_ALGORITHM: 100
-NUMBER_OF_ITERATIONS_PER_EXPERIMENT: 10
-A:  
-  - Dist: Beta
-    Param1: 0.15
-    Param2: 0.7
-  
-  - Dist: Beta
-    Param1: 0.54
-    Param2: 0.2
 
-  - Dist: Beta
-    Param1: 0.38
-    Param2: 0.5
+NUMBER_OF_ITERATIONS_PER_EXPERIMENT: 10000
+
+SEED: 42
+
+A:  
+  - Dist: Normal
+    Params: [0.4, 0.5]
+  
+  - Dist: Normal
+    Params: [0.5, 0.3]
+
+  - Dist: Normal
+    Params: [0.5, 0.5]
+
+  - Dist: Normal
+    Params: [0.5, 0.7]
 
 ξ:
-  - Arm1: 0.3333
-  - Arm2: 0.3333
-  - Arm3: 0.3333
+  - Dist: Categorical
+    Params: 4
+
+PlotSeriesOverTime:
+  - MABField: regret_fixed
+    FileName: "ExperimentOutputs/plot_of_regret_over_time"
+    DisplayPlot: false
+
+  - MABField: γ  
+    FileName: "ExperimentOutputs/plot_of_action_over_time"
+    DisplayPlot: true
+
+PlotSeriesHistogram:
+  - MABField: γ  
+    FileName: "ExperimentOutputs/plot_of_action_histogram"
+    DisplayPlot: true
+
+Algorithms: ["ExponentiatedGradient", "FtrlExponentiatedGradient", "EXP3", "ExploreThenCommit", "UpperConfidenceBound", "EpsilonGreedy", "LinearDecayedEpsilonGreedy", "ExpDecayedEpsilonGreedy", "Hedge"]
+
+ExponentiatedGradientDefaultValues:
+  - η: 0.01
+
+FtrlExponentiatedGradientDefaultValues:
+  - α: 0.8493218002880191 #α=1/sqrt(log(length(A)))
+
+EXP3DefaultValues:
+  - η: 0.01 #η=1/sqrt(NUMBER_OF_ITERATIONS_PER_EXPERIMENT)
+
+ExploreThenCommitDefaultValues:
+  - m: 10
+
+UpperConfidenceBoundDefaultValues:
+  - α: 3
+
+EpsilonGreedyDefaultValues:
+  - ϵ: 0.1
+
+LinearDecayedEpsilonGreedyDefaultValues:
+  - ϵ_start: 1.0
+  - ϵ_end: 0.0
+
+ExpDecayedEpsilonGreedyDefaultValues:
+  - ϵ_start: 1.0
+  - ϵ_end: 0.001
+
+HedgeDefaultValues:
+  - η: 0.1

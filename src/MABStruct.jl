@@ -1,7 +1,6 @@
 module MABStructs
 
     using Random, Distributions
-
     mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
         name::String
         T::Int64
@@ -46,9 +45,11 @@ module MABStructs
             average_reward_per_arm = zeros(Float64, n_actions)
             average_reward_per_arm_bandit = zeros(Float64, n_actions)
             best_fixed_choice = zeros(Int64, T)
+            best_fixed_choice = zeros(Int64, T)
             cumulative_reward_fixed = zeros(Float64, T)
             average_reward_fixed = zeros(Float64, T)
             regret_fixed = zeros(Float64, T)
+            best_dynamic_choice = zeros(Int64, T)
             best_dynamic_choice = zeros(Int64, T)
             cumulative_reward_dynamic = zeros(Float64, T)
             average_reward_dynamic = zeros(Float64, T)
@@ -75,22 +76,23 @@ module MABStructs
 
     function set_instance!(bandit::MABStruct, bandit_new::MABStruct)
         bandit.name = bandit_new.name
-        bandit.τ = bandit_new.τ
+        bandit.ξ = bandit_new.ξ
         bandit.ξ_start = bandit_new.ξ_start
-        bandit.γ = copy(bandit_new.γ)
-        bandit.reward_vector = copy(bandit_new.reward_vector)
-        bandit.choices_per_arm = copy(bandit_new.choices_per_arm)
-        bandit.algorithm_reward = copy(bandit_new.algorithm_reward)
-        bandit.algorithm_cumulative_reward = copy(bandit_new.algorithm_cumulative_reward)
-        bandit.sequence_of_rewards = copy(bandit_new.sequence_of_rewards)
-        bandit.cumulative_reward_per_arm_bandit = copy(bandit_new.cumulative_reward_per_arm_bandit)
-        bandit.cumulative_reward_per_arm = copy(bandit_new.cumulative_reward_per_arm)
-        bandit.average_reward_per_arm = copy(bandit_new.average_reward_per_arm)
-        bandit.average_reward_per_arm_bandit = copy(bandit_new.average_reward_per_arm_bandit)
-        bandit.best_fixed_choice = copy(bandit_new.best_fixed_choice)
-        bandit.cumulative_reward_fixed = copy(bandit_new.cumulative_reward_fixed)
-        bandit.average_reward_fixed = copy(bandit_new.average_reward_fixed)
-        bandit.regret_fixed = copy(bandit_new.regret_fixed)
+        bandit.τ = copy.(bandit_new.τ)
+        bandit.γ = copy.(bandit_new.γ)
+        bandit.reward_vector = copy.(bandit_new.reward_vector)
+        bandit.choices_per_arm = copy.(bandit_new.choices_per_arm)
+        bandit.algorithm_reward = copy.(bandit_new.algorithm_reward)
+        bandit.algorithm_cumulative_reward = copy.(bandit_new.algorithm_cumulative_reward)
+        bandit.sequence_of_rewards = copy.(bandit_new.sequence_of_rewards)
+        bandit.cumulative_reward_per_arm_bandit = copy.(bandit_new.cumulative_reward_per_arm_bandit)
+        bandit.cumulative_reward_per_arm = copy.(bandit_new.cumulative_reward_per_arm)
+        bandit.average_reward_per_arm = copy.(bandit_new.average_reward_per_arm)
+        bandit.average_reward_per_arm_bandit = copy.(bandit_new.average_reward_per_arm_bandit)
+        bandit.best_fixed_choice = copy.(bandit_new.best_fixed_choice)
+        bandit.cumulative_reward_fixed = copy.(bandit_new.cumulative_reward_fixed)
+        bandit.average_reward_fixed = copy.(bandit_new.average_reward_fixed)
+        bandit.regret_fixed = copy.(bandit_new.regret_fixed)
         #TODO define bdc and see if we update elementwise or vectorwise
         # bandit.best_dynamic_choice .= bdc()
         # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
@@ -98,6 +100,7 @@ module MABStructs
         # bandit.regret_dynamic = bandit_new.regret_dynamic
         return 
     end
+
 
     function update_instance!(bandit::MABStruct, action::Integer)
         bandit.τ += 1
@@ -158,7 +161,7 @@ module MABStructs
         println(io, "regret_dynamic: $(bandit.regret_dynamic)")
     end
 
-    function get_kw_list(bandit::MABStruct, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Symbol, Any})
+    function get_kw_list(bandit::MABStruct, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Any, Any})
         if :τ in argnames  # While all the others elements in kw_list work with pointers, hence get updated automatically, τ needs manual update
             τ_position = findfirst(item -> item==:τ, argnames)  # Store the position
             τ_update = true  # Flag the presence of τ
@@ -170,11 +173,11 @@ module MABStructs
         if isempty(default_argnames) # TODO: Add check on quality of default_values
             return τ_update, τ_position, [getfield(bandit, argname) for argname in argnames], Dict()  # Get the fields in argnames from bandit
         else  # If default_argnames is not empty we also collect the values in default_values_algo
-            return τ_update, τ_position, [getfield(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[default_argname]) for default_argname in default_argnames])
+            return τ_update, τ_position, [getfield(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[string(default_argname)]) for default_argname in default_argnames])
         end
     end
 
-    function run!(bandit::MABStruct, optimizer::Function, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Symbol, Any}; verbose=false::Bool)
+    function run!(bandit::MABStruct, optimizer::Function, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Any, Any}; verbose=false::Bool)
         if bandit.τ >= bandit.T
             println("Maximum iterations reached, reset the game or instantiate a new one")
             return nothing
@@ -195,9 +198,10 @@ module MABStructs
             else
                 probs(bandit.ξ) .= optimizer(kw_list...; default_kw_dict...)
             end
-            
-            # Check that the total probability does not exceed one
-            @assert abs(sum(probs(bandit.ξ)) - 1.0) < 1e-5
+            # println("sum")
+            # println(sum(probs(bandit.ξ)) - 1.0)
+            #@assert abs(sum(probs(bandit.ξ)) - 1.0) < 1e-5
+            @assert sum(probs(bandit.ξ)) ≈ 1.0
         end
     end
 

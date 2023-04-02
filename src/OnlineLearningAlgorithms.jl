@@ -1,5 +1,4 @@
 module OnlineLearningAlgorithms
-export ExponentiatedGradient
 using Random, Distributions, DataStructures
 
 
@@ -33,8 +32,7 @@ using Random, Distributions, DataStructures
 
         # Pick the most recent action reward
         most_recent_action = γ[τ]
-        # Calculate the loss
-        loss = -1 * reward_vector[most_recent_action]/ probs(ξ)[most_recent_action]  # observed loss
+        loss = -1.0 * reward_vector[most_recent_action]/ probs(ξ)[most_recent_action]  # observed loss
         loss_vector = zeros(Float64, length(reward_vector))
         loss_vector[most_recent_action] = loss
         return probs(ξ) .* exp.(-η.*loss_vector) ./ sum(probs(ξ) .* exp.(-η.*loss_vector))
