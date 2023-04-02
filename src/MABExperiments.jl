@@ -57,6 +57,17 @@ experiments = Dict(string(algorithm) => [zero(M.MABStruct, A) for _ in 1:NUMBER_
 
     The master function for running the experiment in the case of a single thread.
     Runs a MABStruct game for each algorithm provided.
+
+    ###Arguments
+
+    `A::Tuple{Vararg{Distribution}}`: A tuple containing the probability law governing the distirbutions of the 
+    rewards for each of the |A| arms.
+
+    `ξ::Distributions.Categorical{Float64, Vector{Float64}}`: A categorical distribution over the n=|A| possible 
+    actions in the bandit game.
+
+    `algorithms::Vector{Function}`: A vector containing each of the Online Learning Algorithms to be tested.
+
 """
 function RunExperiment(A, ξ, algorithms)
     #Create a MABStruct game
@@ -87,6 +98,16 @@ end
 
     The master function for running the experiment in the case of a single thread.
     Runs a MABStruct game for each algorithm provided.
+
+    ###Arguments
+
+    `A::Tuple{Vararg{Distribution}}`: A tuple containing the probability law governing the distirbutions of the 
+    rewards for each of the |A| arms.
+
+    `ξ::Distributions.Categorical{Float64, Vector{Float64}}`: A categorical distribution over the n=|A| possible 
+    actions in the bandit game.
+
+    `algorithms::Vector{Function}`: A vector containing each of the Online Learning Algorithms to be tested.
 """
 function RunExperimentMultiThread(A, ξ, algorithms)
     #Each algorithm can be run independently so we can parallelize the games
