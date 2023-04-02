@@ -2,7 +2,23 @@ module MABPlots
 using Statistics, Plots, Distributions, StatsBase
 include("MABStruct.jl"); M = MABStructs;
 
-    function PlotSeriesOverTime(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool) where DT <: Tuple{Vararg{Distribution}}
+    """
+    PlotSeriesOverTime(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool)
+
+    Given a finalized experiment it plots a time series of a MABStruct field. If the field is of type Vector{Vector{Float64}} it will summarize across experiments
+    by plotting the mean over time with the corresponding 95% confidence interval. If the field is of type Vector{Vector{Int64}} it will summarize across experiments
+    by plotting the majority vote across experiments over time.
+
+    ###Arguments
+
+    `experiments::Dict, MABField::Symbol`: The dictionary resulting from the finalized experiment run storing the final results
+
+    `filename=nothing::Union{Nothing, String}`: An optional path, if provided the function will save the figure at this path
+
+    `display_plot=false::Bool`: An optional boolean determining if the plot should be displayed at the end of the function
+
+    """
+    function PlotSeriesOverTime(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool)
         MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
     
         plot_size = length(experiments) * 300
@@ -35,25 +51,39 @@ include("MABStruct.jl"); M = MABStructs;
         return fig
     end
 
-    function PlotSeriesHistogram(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool) where DT <: Tuple{Vararg{Distribution}}
-        MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
-        plot_size = length(experiments) * 300
-        plot_title = "Experiment Diganostics For $(String(MABField))"
-        fig = plot(layout=length(experiments), size=(plot_size,plot_size), title=plot_title)
-        for (i, algorithm) in enumerate(experiments)
-            data = [getfield(experiments[algorithm[1]][j], MABField) for j in 1:length(experiments[algorithm[1]])]
-            (i == 1 && (typeof(data) != Vector{Vector{Int64}})) && throw(ArgumentError("MABField is not a suitable field for a histogram"))                
-            subplot_title = "$(algorithm[1])"
-            plot!(xlabel="Arm", ylabel="$(String(MABField))", legend=:topleft, title=subplot_title, subplot=i)
-            cnts = StatsBase.mode(data)
-            cntmap = StatsBase.countmap(cnts)
-            x = sort(collect(keys(cntmap)))
-            y = [cntmap[i] for i in x]
-            bar!(x, y, label="Mode At Each Time Step", bar_width=1, subplot=i, xticks=x)
+    """
+    PlotSeriesHistogram(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool)
+
+    Given a finalized experiment it plots a histogram of a given MABSctruct field, provided it is discrete. 
+
+    ###Arguments
+
+    `experiments::Dict, MABField::Symbol`: The dictionary resulting from the finalized experiment run storing the final results
+
+    `filename=nothing::Union{Nothing, String}`: An optional path, if provided the function will save the figure at this path
+
+    `display_plot=false::Bool`: An optional boolean determining if the plot should be displayed at the end of the function 
+    
+    """
+    function PlotSeriesHistogram(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool)
+            MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
+            plot_size = length(experiments) * 300
+            plot_title = "Experiment Diganostics For $(String(MABField))"
+            fig = plot(layout=length(experiments), size=(plot_size,plot_size), title=plot_title)
+            for (i, algorithm) in enumerate(experiments)
+                data = [getfield(experiments[algorithm[1]][j], MABField) for j in 1:length(experiments[algorithm[1]])]
+                (i == 1 && (typeof(data) != Vector{Vector{Int64}})) && throw(ArgumentError("MABField is not a suitable field for a histogram"))                
+                subplot_title = "$(algorithm[1])"
+                plot!(xlabel="Arm", ylabel="$(String(MABField))", legend=:topleft, title=subplot_title, subplot=i)
+                cnts = StatsBase.mode(data)
+                cntmap = StatsBase.countmap(cnts)
+                x = sort(collect(keys(cntmap)))
+                y = [cntmap[i] for i in x]
+                bar!(x, y, label="Mode At Each Time Step", bar_width=1, subplot=i, xticks=x)
+            end
+            filename === nothing || savefig(fig, filename)
+            display_plot === false || display(fig)
+            return fig
         end
-        filename === nothing || savefig(fig, filename)
-        display_plot === false || display(fig)
-        return fig
-    end
 
 end #module
