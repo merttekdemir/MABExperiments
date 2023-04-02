@@ -21,6 +21,7 @@ module MABStructs
         cumulative_reward_fixed::Vector{Float64}
         average_reward_fixed::Vector{Float64}
         regret_fixed::Vector{Float64}
+        regret_pseudo::Vector{Float64}
         best_dynamic_choice::Vector{Int64}
         cumulative_reward_dynamic::Vector{Float64}
         average_reward_dynamic::Vector{Float64}
@@ -49,6 +50,7 @@ module MABStructs
             cumulative_reward_fixed = zeros(Float64, T)
             average_reward_fixed = zeros(Float64, T)
             regret_fixed = zeros(Float64, T)
+            regret_pseudo = zeros(Float64, T)
             best_dynamic_choice = zeros(Int64, T)
             best_dynamic_choice = zeros(Int64, T)
             cumulative_reward_dynamic = zeros(Float64, T)
@@ -63,9 +65,9 @@ module MABStructs
                         cumulative_reward_per_arm_bandit, cumulative_reward_per_arm, 
                         average_reward_per_arm, average_reward_per_arm_bandit,
                         best_fixed_choice, cumulative_reward_fixed, 
-                        average_reward_fixed, regret_fixed, best_dynamic_choice, 
-                        cumulative_reward_dynamic, average_reward_dynamic, 
-                        regret_dynamic, τ
+                        average_reward_fixed, regret_fixed, regret_pseudo, 
+                        best_dynamic_choice, cumulative_reward_dynamic, 
+                        average_reward_dynamic, regret_dynamic, τ
                         )
         end
     end
@@ -74,30 +76,31 @@ module MABStructs
     Base.zero(::Type{MABStruct}, A::DT) where DT <: Tuple{Vararg{Distribution}} = MABStruct(0, A, Distributions.Categorical(length(A)))
     Base.zero(::MABStruct, A::DT) where DT <: Tuple{Vararg{Distribution}} = zero(MABStruct, A)
 
-    function set_instance!(bandit::MABStruct, bandit_new::MABStruct)
-        bandit.name = bandit_new.name
-        bandit.ξ = bandit_new.ξ
-        bandit.ξ_start = bandit_new.ξ_start
-        bandit.τ = copy.(bandit_new.τ)
-        bandit.γ = copy.(bandit_new.γ)
-        bandit.reward_vector = copy.(bandit_new.reward_vector)
-        bandit.choices_per_arm = copy.(bandit_new.choices_per_arm)
-        bandit.algorithm_reward = copy.(bandit_new.algorithm_reward)
-        bandit.algorithm_cumulative_reward = copy.(bandit_new.algorithm_cumulative_reward)
-        bandit.sequence_of_rewards = copy.(bandit_new.sequence_of_rewards)
-        bandit.cumulative_reward_per_arm_bandit = copy.(bandit_new.cumulative_reward_per_arm_bandit)
-        bandit.cumulative_reward_per_arm = copy.(bandit_new.cumulative_reward_per_arm)
-        bandit.average_reward_per_arm = copy.(bandit_new.average_reward_per_arm)
-        bandit.average_reward_per_arm_bandit = copy.(bandit_new.average_reward_per_arm_bandit)
-        bandit.best_fixed_choice = copy.(bandit_new.best_fixed_choice)
-        bandit.cumulative_reward_fixed = copy.(bandit_new.cumulative_reward_fixed)
-        bandit.average_reward_fixed = copy.(bandit_new.average_reward_fixed)
-        bandit.regret_fixed = copy.(bandit_new.regret_fixed)
+    function set_instance!(bandit::MABStruct, bandit_other::MABStruct)
+        bandit.name = bandit_other.name
+        bandit.ξ = bandit_other.ξ
+        bandit.ξ_start = bandit_other.ξ_start
+        bandit.τ = copy.(bandit_other.τ)
+        bandit.γ = copy.(bandit_other.γ)
+        bandit.reward_vector = copy.(bandit_other.reward_vector)
+        bandit.choices_per_arm = copy.(bandit_other.choices_per_arm)
+        bandit.algorithm_reward = copy.(bandit_other.algorithm_reward)
+        bandit.algorithm_cumulative_reward = copy.(bandit_other.algorithm_cumulative_reward)
+        bandit.sequence_of_rewards = copy.(bandit_other.sequence_of_rewards)
+        bandit.cumulative_reward_per_arm_bandit = copy.(bandit_other.cumulative_reward_per_arm_bandit)
+        bandit.cumulative_reward_per_arm = copy.(bandit_other.cumulative_reward_per_arm)
+        bandit.average_reward_per_arm = copy.(bandit_other.average_reward_per_arm)
+        bandit.average_reward_per_arm_bandit = copy.(bandit_other.average_reward_per_arm_bandit)
+        bandit.best_fixed_choice = copy.(bandit_other.best_fixed_choice)
+        bandit.cumulative_reward_fixed = copy.(bandit_other.cumulative_reward_fixed)
+        bandit.average_reward_fixed = copy.(bandit_other.average_reward_fixed)
+        bandit.regret_fixed = copy.(bandit_other.regret_fixed)
+        bandit.regret_pseudo = copy.(bandit_other.regret_pseudo)
         #TODO define bdc and see if we update elementwise or vectorwise
         # bandit.best_dynamic_choice .= bdc()
         # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
         # bandit.average_reward_dynamic = zeros(Float64, T)
-        # bandit.regret_dynamic = bandit_new.regret_dynamic
+        # bandit.regret_dynamic = bandit_other.regret_dynamic
         return 
     end
 
@@ -118,6 +121,10 @@ module MABStructs
         bandit.cumulative_reward_fixed[i] = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice[i]]
         bandit.average_reward_fixed[i] += bandit.average_reward_per_arm[bandit.best_fixed_choice[i]]
         bandit.regret_fixed[i] = bandit.cumulative_reward_fixed[i] - bandit.algorithm_cumulative_reward[i]
+        bandit.regret_pseudo[i] = (maximum(mean.(bandit.A)) - mean(bandit.A[bandit.γ[i]]))
+        if i > 1 
+            bandit.regret_pseudo[i] += bandit.regret_pseudo[i-1]
+        end
         #TODO define bdc and see if we update elementwise or vectorwise
         # bandit.best_dynamic_choice .= bdc()
         # bandit.cumulative_reward_dynamic = bandit.cumulative_reward_per_arm[bandit.best_fixed_choice]
@@ -158,6 +165,7 @@ module MABStructs
         println(io, "cumulative_reward_dynamic: $(bandit.cumulative_reward_dynamic)")
         println(io, "average_reward_dynamic: $(bandit.average_reward_dynamic)")
         println(io, "regret_fixed: $(bandit.regret_fixed)")
+        println(io, "regret_pseudo: $(bandit.regret_pseudo)")
         println(io, "regret_dynamic: $(bandit.regret_dynamic)")
     end
 
@@ -226,6 +234,7 @@ module MABStructs
         fill!(bandit.cumulative_reward_dynamic, 0)
         fill!(bandit.average_reward_dynamic, 0)
         fill!(bandit.regret_dynamic, 0)
+        fill!(bandit.regret_pseudo, 0)
         bandit.τ = 0
         return
     end

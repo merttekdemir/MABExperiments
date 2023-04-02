@@ -24,7 +24,11 @@ A:
 
 PlotSeriesOverTime:
   - MABField: regret_fixed
-    FileName: "ExperimentOutputs/plot_of_regret_over_time"
+    FileName: "ExperimentOutputs/plot_of_regret_fixed_over_time"
+    DisplayPlot: false
+
+  - MABField: regret_pseudo
+    FileName: "ExperimentOutputs/plot_of_regret_pseudo_over_time"
     DisplayPlot: false
 
   - MABField: γ  
