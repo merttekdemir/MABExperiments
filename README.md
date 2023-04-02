@@ -25,7 +25,7 @@ In general, the multi-arm bandit problem is part of a broader learning model cal
 In each round $τ=1,\ldots,T$:
 
 1. Learner selects $i_τ \in A$
-2. The adversary picks a convex loss function $f_τ: A \rightarrow \mathcal{R}$
+2. The adversary picks a convex loss function $f_τ: A \rightarrow \mathbb{R}$
 3. The player suffers loss $f_t(i_t)$ and observes some information about $f_t$
 
 
@@ -44,7 +44,7 @@ Depending on the feedback given to the learner there are also several possible s
 In studying such OCO problems the goal is to design an online decision making algorithm to help the learner choose good actions. The quality of the learns actions is measured through the notion of regret. For a time step $T$ this measures the difference between the cumulative losses the learner has observed from realized actions and the loss the learner could have observed by playing the best fixed action. The goal of the learner is to minimize regret:
 
 ```math
-\mathbb{R}_T = \sum_{τ=1}^T f_τ(i_τ)- \min_{i^*\in[K]} \sum_{τ=1}^T f_τ(i^*)
+\mathcal{R}_T = \sum_{τ=1}^T f_τ(i_τ)- \min_{i^*\in[K]} \sum_{τ=1}^T f_τ(i^*)
 ```
 
 The OCO settings listed above study the trade-off between exploration and exploitation. In particular, at each time step $t$ actions can be thought of as associating to two key outputs; the loss suffered (reward gained) and feedback received about the action by having taken that action. Thus, to minimize regret the learner must devise a strategy balancing gaining information for future exploitation and exploiting his learning's.
