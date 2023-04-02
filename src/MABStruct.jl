@@ -1,12 +1,12 @@
 module MABStructs
 
     using Random, Distributions
-    mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
-        name::String
-        T::Int64
-        A::DT
-        ξ::Categorical{Float64, Vector{Float64}}
-        ξ_start::Categorical{Float64, Vector{Float64}}
+    mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}  # DT is the Type of the vector of distributions of the arms
+        name::String  # Name of the algorithm
+        T::Int64  # Total number of iterations
+        A::DT  # Vector of Distributions per arm
+        ξ::Categorical{Float64, Vector{Float64}}  # Mixed action, it is the output of all the algorithms and is updated iteration by iteration
+        ξ_start::Categorical{Float64, Vector{Float64}}  # Placeholder for the initial configuration of ξ, needed
         γ::Vector{Int64}
         reward_vector::Vector{Float64}
         choices_per_arm::Vector{Int64}
