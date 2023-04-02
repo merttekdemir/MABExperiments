@@ -11,11 +11,11 @@ include("MABStruct.jl"); M = MABStructs;
 
     ###Arguments
 
-    `experiments::Dict, MABField::Symbol`: The dictionary resulting from the finalized experiment run storing the final results
+    - `experiments::Dict, MABField::Symbol`: The dictionary resulting from the finalized experiment run storing the final results.
 
-    `filename=nothing::Union{Nothing, String}`: An optional path, if provided the function will save the figure at this path
+    - `filename=nothing::Union{Nothing, String}`: An optional path, if provided the function will save the figure at this path.
 
-    `display_plot=false::Bool`: An optional boolean determining if the plot should be displayed at the end of the function
+    - `display_plot=false::Bool`: An optional boolean determining if the plot should be displayed at the end of the function.
 
     """
     function PlotSeriesOverTime(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool)
@@ -58,11 +58,11 @@ include("MABStruct.jl"); M = MABStructs;
 
     ###Arguments
 
-    `experiments::Dict, MABField::Symbol`: The dictionary resulting from the finalized experiment run storing the final results
+    - `experiments::Dict, MABField::Symbol`: The dictionary resulting from the finalized experiment run storing the final results.
 
-    `filename=nothing::Union{Nothing, String}`: An optional path, if provided the function will save the figure at this path
+    - `filename=nothing::Union{Nothing, String}`: An optional path, if provided the function will save the figure at this path.
 
-    `display_plot=false::Bool`: An optional boolean determining if the plot should be displayed at the end of the function 
+    - `display_plot=false::Bool`: An optional boolean determining if the plot should be displayed at the end of the function. 
     
     """
     function PlotSeriesHistogram(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool)
