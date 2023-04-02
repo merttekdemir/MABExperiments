@@ -1,20 +1,31 @@
 
 NUMBER_OF_EXPERIMENTS_PER_ALGORITHM: 100
+
 NUMBER_OF_ITERATIONS_PER_EXPERIMENT: 10
+
+SEED: 42
+
 A:  
   - Dist: Beta
-    Param1: 0.15
-    Param2: 0.7
+    Params: [0.15, 0.7]
   
   - Dist: Beta
-    Param1: 0.54
-    Param2: 0.2
+    Params: [0.54,0.2]
 
   - Dist: Beta
-    Param1: 0.38
-    Param2: 0.5
+    Params: [0.38, 0.5]
 
 ξ:
-  - Arm1: 0.3333
-  - Arm2: 0.3333
-  - Arm3: 0.3333
+  - Dist: Categorical
+    Params: [0.3333333333333333, 0.3333333333333333, 0.3333333333333333]
+
+PlotSeriesOverTime:
+  - MABField: regret_fixed
+    FileName: "ExperimentOutputs/plot_of_regret_over_time"
+
+  - MABField: γ  
+    FileName: "ExperimentOutputs/plot_of_action_over_time"
+
+PlotSeriesHistogram:
+  - MABField: γ  
+    FileName: "ExperimentOutputs/plot_of_action_histogram"

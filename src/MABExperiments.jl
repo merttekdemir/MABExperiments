@@ -1,16 +1,20 @@
-using Random, Distributions, Plots, Statistics, StatsBase
-NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = 100
-NUMBER_OF_ITERATIONS_PER_EXPERIMENT = 10000
-Random.seed!(42)
+using Random, Distributions, Plots, Statistics, StatsBase, YAML
+CONF = YAML.load(open("src/configuration.yml"))
+
+NUMBER_OF_EXPERIMENTS_PER_ALGORITHM = CONF["NUMBER_OF_EXPERIMENTS_PER_ALGORITHM"]
+NUMBER_OF_ITERATIONS_PER_EXPERIMENT = CONF["NUMBER_OF_ITERATIONS_PER_EXPERIMENT"]
+
+Random.seed!(CONF["SEED"])
+
 seeds = rand(1:10000000, NUMBER_OF_EXPERIMENTS_PER_ALGORITHM)
 
 include("MABStruct.jl"); M = MABStructs;
 include("OnlineLearningAlgorithms.jl"); O = OnlineLearningAlgorithms;
 include("MABPlots.jl"); P = MABPlots;
 
-# A = (Beta(0.15, 0.7), Beta(0.54, 0.2), Beta(0.38, 0.5))
-A = (Normal(0.5, 0.7), Normal(0.5, 0.2), Normal(0.4, 0.5), Normal(0.2, 0.2))
-ξ = Distributions.Categorical(length(A))
+A = Tuple(getfield(Distributions, Symbol(i["Dist"]))(i["Params"]...) for i in CONF["A"])
+ξ = getfield(Distributions, Symbol(CONF["ξ"][1]["Dist"]))(CONF["ξ"][1]["Params"]...)
+
 default_values = Dict("ExponentiatedGradient" => Dict(),
                       "FtrlExponentiatedGradient" => Dict(),
                       "EXP3" => Dict(),
@@ -59,6 +63,16 @@ end
 
 
 experiments = experiment_1(A, ξ, algorithms);
-P.PlotSeriesOverTime(experiments, :regret_fixed; filename="ExperimentOutputs/plot_of_regret_over_time")
-P.PlotSeriesOverTime(experiments, :γ; filename="ExperimentOutputs/plot_of_action_over_time")
-P.PlotSeriesHistogram(experiments, :γ; filename="ExperimentOutputs/plot_of_action_histogram")
+
+
+if haskey(CONF, "PlotSeriesOverTime")
+    for i in CONF["PlotSeriesOverTime"]
+        P.PlotSeriesOverTime(experiments, Symbol(i["MABField"]); filename=i["FileName"])
+    end
+end
+
+if haskey(CONF, "PlotSeriesHistogram")
+    for i in CONF["PlotSeriesHistogram"]
+        P.PlotSeriesHistogram(experiments, Symbol(i["MABField"]); filename=i["FileName"])
+    end
+end
