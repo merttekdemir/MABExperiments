@@ -93,13 +93,13 @@ experiments = experiment_2(A, ξ, algorithms);
 
 if haskey(CONF, "PlotSeriesOverTime")
     for i in CONF["PlotSeriesOverTime"]
-        P.PlotSeriesOverTime(experiments, Symbol(i["MABField"]); filename=i["FileName"])
+        P.PlotSeriesOverTime(experiments, Symbol(i["MABField"]); filename=i["FileName"], display_plot=i["DisplayPlot"])
     end
 end
 
 if haskey(CONF, "PlotSeriesHistogram")
     for i in CONF["PlotSeriesHistogram"]
-        P.PlotSeriesHistogram(experiments, Symbol(i["MABField"]); filename=i["FileName"])
+        P.PlotSeriesHistogram(experiments, Symbol(i["MABField"]); filename=i["FileName"], display_plot=i["DisplayPlot"])
     end
 end
 

@@ -2,7 +2,7 @@ module MABPlots
 using Statistics, Plots, Distributions, StatsBase
 include("MABStruct.jl"); M = MABStructs;
 
-    function PlotSeriesOverTime(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}) where DT <: Tuple{Vararg{Distribution}}
+    function PlotSeriesOverTime(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool) where DT <: Tuple{Vararg{Distribution}}
         MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
     
         plot_size = length(experiments) * 300
@@ -31,10 +31,11 @@ include("MABStruct.jl"); M = MABStructs;
             end
         end
         filename === nothing || savefig(fig, filename)
+        display_plot === false || display(fig)
         return fig
     end
 
-    function PlotSeriesHistogram(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}) where DT <: Tuple{Vararg{Distribution}}
+    function PlotSeriesHistogram(experiments::Dict, MABField::Symbol; filename=nothing::Union{Nothing, String}, display_plot=false::Bool) where DT <: Tuple{Vararg{Distribution}}
         MABField in fieldnames(M.MABStructs.MABStruct) || throw(ArgumentError("MABField is not a field of MABStruct"))
         plot_size = length(experiments) * 300
         plot_title = "Experiment Diganostics For $(String(MABField))"
@@ -51,6 +52,7 @@ include("MABStruct.jl"); M = MABStructs;
             bar!(x, y, label="Mode At Each Time Step", bar_width=1, subplot=i, xticks=x)
         end
         filename === nothing || savefig(fig, filename)
+        display_plot === false || display(fig)
         return fig
     end
 
