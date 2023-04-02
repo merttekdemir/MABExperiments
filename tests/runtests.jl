@@ -1,8 +1,12 @@
 using Test
 
-include(joinpath("..", "src", "MABStruct.jl")); M = MABStructs;
-include("test_MABStruct.jl"); U = UnitTests;
+tests = [
+    "test_MABStruct.jl"
+    "test_OnlineLearningAlgorithms.jl"
+    "test_Utils.jl"
+]
 
-# Run the tests
-runtests(tests=U.tests; ncores=ceil(Int, Sys.CPU_THREADS / 2),
-exit_on_error=false, revise=false, seed=42)
+for test in tests
+    println("Running $test")
+    include(test)
+end

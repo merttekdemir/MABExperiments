@@ -2,15 +2,13 @@ module MABStructs
 
     using Random, Distributions
 
-
-    Random.seed!(42)
-
     mutable struct MABStruct{DT<:Tuple{Vararg{Distribution}}}
         name::String
         T::Int64
         A::DT
         ξ::Categorical{Float64, Vector{Float64}}
-        γ::Vector{Int8}
+        ξ_start::Categorical{Float64, Vector{Float64}}
+        γ::Vector{Int64}
         reward_vector::Vector{Float64}
         choices_per_arm::Vector{Int64}
         algorithm_reward::Vector{Float64}
@@ -20,11 +18,11 @@ module MABStructs
         cumulative_reward_per_arm::Vector{Float64}
         average_reward_per_arm::Vector{Float64}
         average_reward_per_arm_bandit::Vector{Float64}
-        best_fixed_choice::Vector{Int8}
+        best_fixed_choice::Vector{Int64}
         cumulative_reward_fixed::Vector{Float64}
         average_reward_fixed::Vector{Float64}
         regret_fixed::Vector{Float64}
-        best_dynamic_choice::Vector{Int8}
+        best_dynamic_choice::Vector{Int64}
         cumulative_reward_dynamic::Vector{Float64}
         average_reward_dynamic::Vector{Float64}
         regret_dynamic::Vector{Float64}
@@ -36,7 +34,8 @@ module MABStructs
             n_actions == ncategories(ξ) || throw(ArgumentError("Error in construction"))
             
             # Initialised values
-            γ = zeros(Int8, T)
+            ξ_start = Distributions.Categorical(copy(probs(ξ)))
+            γ = zeros(Int64, T)
             reward_vector = zeros(Float64, n_actions)
             choices_per_arm = zeros(Int64, n_actions)
             algorithm_reward = zeros(Float64, T)
@@ -46,18 +45,18 @@ module MABStructs
             cumulative_reward_per_arm = zeros(Float64, n_actions)
             average_reward_per_arm = zeros(Float64, n_actions)
             average_reward_per_arm_bandit = zeros(Float64, n_actions)
-            best_fixed_choice = zeros(Int8, T)
+            best_fixed_choice = zeros(Int64, T)
             cumulative_reward_fixed = zeros(Float64, T)
             average_reward_fixed = zeros(Float64, T)
             regret_fixed = zeros(Float64, T)
-            best_dynamic_choice = zeros(Int8, T)
+            best_dynamic_choice = zeros(Int64, T)
             cumulative_reward_dynamic = zeros(Float64, T)
             average_reward_dynamic = zeros(Float64, T)
             regret_dynamic = zeros(Float64, T)
 
             τ = 0
 
-            return new{DT}(name, T, A, ξ, γ, reward_vector, 
+            return new{DT}(name, T, A, ξ, ξ_start, γ, reward_vector, 
                         choices_per_arm, algorithm_reward,
                         algorithm_cumulative_reward, sequence_of_rewards,
                         cumulative_reward_per_arm_bandit, cumulative_reward_per_arm, 
@@ -74,13 +73,10 @@ module MABStructs
     Base.zero(::Type{MABStruct}, A::DT) where DT <: Tuple{Vararg{Distribution}} = MABStruct(0, A, Distributions.Categorical(length(A)))
     Base.zero(::MABStruct, A::DT) where DT <: Tuple{Vararg{Distribution}} = zero(MABStruct, A)
 
-    function Base.zeros(::Type{MABStruct}, A::DT, dim::Int64) where DT <: Tuple{Vararg{Distribution}}
-        return [zero(MABStruct, A) for _ in range(1, dim)]
-    end
-
-    function set_instance!(bandit::MABStruct, bandit_new::MABStruct) # T <: Tuple{Vararg{Distribution}}
+    function set_instance!(bandit::MABStruct, bandit_new::MABStruct)
         bandit.name = bandit_new.name
         bandit.τ = bandit_new.τ
+        bandit.ξ_start = bandit_new.ξ_start
         bandit.γ = copy(bandit_new.γ)
         bandit.reward_vector = copy(bandit_new.reward_vector)
         bandit.choices_per_arm = copy(bandit_new.choices_per_arm)
@@ -162,54 +158,52 @@ module MABStructs
         println(io, "regret_dynamic: $(bandit.regret_dynamic)")
     end
 
-    # function update_kw_list(bandit::MABStruct, argnames::Vector{Symbol})
-    #     return [getfield(bandit, argname) for argname in argnames]
-    # end
-
-    function run!(bandit::MABStruct, optimizer::Function, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Any, Any}; verbose=false::Bool)
-        # println(bandit)
-        if bandit.τ == bandit.T
-            println("Maximum iterations reached, reset game or instantiate new one")
-        end
-        if isempty(default_argnames) # TODO: Add check on quality of default_values
-            kw_list, default_kw_dict = [getfield(bandit, argname) for argname in argnames], Dict()
-        else
-            kw_list, default_kw_dict = [getfield(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[default_argname]) for default_argname in default_argnames])
-        end
-        τ_update = false
+    function get_kw_list(bandit::MABStruct, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Symbol, Any})
         if :τ in argnames  # While all the others elements in kw_list work with pointers, hence get updated automatically, τ needs manual update
             τ_position = findfirst(item -> item==:τ, argnames)  # Store the position
-            τ_update = true
+            τ_update = true  # Flag the presence of τ
+        else
+            τ_update = false
+            τ_position = nothing
         end
-        # println(string(optimizer))
+        
+        if isempty(default_argnames) # TODO: Add check on quality of default_values
+            return τ_update, τ_position, [getfield(bandit, argname) for argname in argnames], Dict()  # Get the fields in argnames from bandit
+        else  # If default_argnames is not empty we also collect the values in default_values_algo
+            return τ_update, τ_position, [getfield(bandit, argname) for argname in argnames], Dict([(default_argname, default_values_algo[default_argname]) for default_argname in default_argnames])
+        end
+    end
+
+    function run!(bandit::MABStruct, optimizer::Function, argnames::Vector{Symbol}, default_argnames::Vector{Symbol}, default_values_algo::Dict{Symbol, Any}; verbose=false::Bool)
+        if bandit.τ >= bandit.T
+            println("Maximum iterations reached, reset the game or instantiate a new one")
+            return nothing
+        end
+        
+        τ_update, τ_position, kw_list, default_kw_dict = get_kw_list(bandit, argnames, default_argnames, default_values_algo)
+
         for i in 1:bandit.T
-            if  τ_update
-                kw_list[τ_position] += 1
-            end
-            # if i<=10
-            #    println(i)
-            #    println(kw_list)
-            # end
+            # Manually update the τ argument in kw_list
+            τ_update && (kw_list[τ_position] += 1)
+
+            # Run a single step of the bandit game, to set the rewards and store all the information to run the optimizers
             run_step!(bandit)
             verbose && println(bandit)
-            # kw_list = update_kw_list(bandit, argnames)  # TODO: Optimize performance, idk how
-            # update policy
-            # println(i)
-            # println("k $kw_list")
+            # Run the optimizers
             if isempty(default_kw_dict)
                 probs(bandit.ξ) .= optimizer(kw_list...)  # The order is mantained by the construction
             else
                 probs(bandit.ξ) .= optimizer(kw_list...; default_kw_dict...)
             end
-            # println("sum")
-            # println(sum(probs(bandit.ξ)) - 1.0)
+            
+            # Check that the total probability does not exceed one
             @assert abs(sum(probs(bandit.ξ)) - 1.0) < 1e-5
         end
-        # println("Game Terminated")
     end
 
     function reset!(bandit::MABStruct; name="MAB Experiment"::String)
         bandit.name = name
+        bandit.ξ = Distributions.Categorical(copy(probs(bandit.ξ_start)))
         fill!(bandit.γ, 0)
         fill!(bandit.reward_vector, 0)
         fill!(bandit.choices_per_arm, 0)
