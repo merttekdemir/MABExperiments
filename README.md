@@ -15,45 +15,36 @@ Considering also the plethora of algorithms and corresponding hyperparameters on
 As a result the purpose of this repository is to create an efficient framework for testing such online learning algorthims.
 Moreover, as much as possible, we have tried to design the repository such that it can easily be extended to new algorithms, and new game settings (eg. Bandits with context).
 
-## Introduction to Multi Armed Bandits
+## Brief Introduction to Multi Armed Bandits
 The traditional introduction to the multi-arm bandit problem follows the analogy of slot machines in a casino. Imagine you have 100 dollars and walk into a casino with 10 slot machines. Your goal is to maximize the amount of money you walk out from the casino with, however all the slot machines are rigged in different ways unknown to you. Do you choose to spend all you money playing on one machine? Or perhaps you prefer to reserve a portion of you money for trying out all the machines first, then continuing to play on only the one that provided the lowest loss (best reward). 
 
 For a more modern and practical applications consider serving advertisements on social media. The platform must choose an advertisement to display to the user given a set of possible advertisements and past experiences of displaying those advertisements to the user. The advertiser will observe a binary loss depending on if the user clicked on the advertisement or not, however will not be able to observe the counterfactual losses had the advertiser selected a different advertisement.
 
 In general, the multi-arm bandit problem is part of a broader learning model called Online Convex Optimization (OCO). OCO can be viewed as a game between a learner and an adversary. The learner can take any action from an action space $K$, which is a fixed compact convex set determined before the game starts. The game then proceeds for $T$ rounds for some integer $T$.
 
-In each round $t=1,\ldots,T$:
+In each round $τ=1,\ldots,T$:
 
-$$
-\begin{itemize}
-    \item Learner selects $i_t \in K$
-    \item The adversary picks a convex loss function $f_t: K \rightarrow \mathbbm{R}$
-    \item The player suffers loss $f_t(i_t)$ and observes some information about $f_t$
-\end{itemize}
-$$
+    1. Learner selects $i_τ \in K$
+    2. The adversary picks a convex loss function $f_τ: K \rightarrow R$
+    3. The player suffers loss $f_t(i_t)$ and observes some information about $f_t$
+
 
 Depending on the power of the adversary there are several possible setting:
 
-$$
-\begin{itemize}
-    \item Stochastic setting: $f_1,\ldots,f_T$ are i.i.d samples of a fixed distribution
-    \item Oblivious adversary setting: $f_1,\ldots,f_T$ are arbritary but decided before the game starts (i.e. independent of the player's actions)
-    \item Adaptive adversary setting: For each $t$, $f_t$ depends on $i_1,\ldots,i_t$
-\end{itemize}
-$$
+    * Stochastic setting: $f_1,\ldots,f_T$ are i.i.d samples of a fixed distribution
+    * Oblivious adversary setting: $f_1,\ldots,f_T$ are arbritary but decided before the game starts (i.e. independent of the player's actions)
+    * Adaptive adversary setting: For each $t$, $f_t$ depends on $i_1,\ldots,i_t$
 
 Depending on the feedback given to the learner there are also several possible settings:
 
-$$
-\begin{itemize}
-    \item Full information setting: player observes $f_t$
-    \item Bandit setting: player only observes $f_t(i_t)$
-\end{itemize}
-$$
+
+    * Full information setting: player observes $f_t$
+    * Bandit setting: player only observes $f_t(i_t)$
+
 
 In studying such OCO problems the goal is to design an online decision making algorithm to help the learner choose good actions. The quality of the learns actions is measured through the notion of regret. For a time step $T$ this measures the difference between the cumulative losses the learner has observed from realized actions and the loss the learner could have observed by playing the best fixed action. The goal of the learner is to minimize regret:
 
-$$\mathcal{R}_T = \sum_{t=1}^T f_t(i_t)- \min_{i^*\in[K]}\sum_{t=1}^T f_t(i^*)$$
+$ \R_T = \sum_{t=1}^T f_t(i_t)- \min_{i^*\in[K]}\sum_{t=1}^T f_t(i^*) $
 
 The OCO settings listed above study the trade-off between exploration and exploitation. In particular, at each time step $t$ actions can be thought of as associating to two key outputs; the loss suffered (reward gained) and feedback received about the action by having taken that action. Thus, to minimize regret the learner must devise a strategy balancing gaining information for future exploitation and exploiting his learning's.
 ## Repository Overview
