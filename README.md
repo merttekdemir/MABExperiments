@@ -31,21 +31,21 @@ In each round $τ=1,\ldots,T$:
 
 Depending on the power of the adversary there are several possible setting:
 
-    * Stochastic setting: $f_1,\ldots,f_T$ are i.i.d samples of a fixed distribution
-    * Oblivious adversary setting: $f_1,\ldots,f_T$ are arbritary but decided before the game starts (i.e. independent of the player's actions)
-    * Adaptive adversary setting: For each $t$, $f_t$ depends on $i_1,\ldots,i_t$
+    Stochastic setting: $f_1,\ldots,f_T$ are i.i.d samples of a fixed distribution
+    Oblivious adversary setting: $f_1,\ldots,f_T$ are arbritary but decided before the game starts (i.e. independent of the player's actions)
+    Adaptive adversary setting: For each $t$, $f_t$ depends on $i_1,\ldots,i_τ$
 
 Depending on the feedback given to the learner there are also several possible settings:
 
 
-    * Full information setting: player observes $f_t$
-    * Bandit setting: player only observes $f_t(i_t)$
+    * Full information setting: player observes $f_τ$
+    * Bandit setting: player only observes $f_τ(i_τ)$
 
 
 In studying such OCO problems the goal is to design an online decision making algorithm to help the learner choose good actions. The quality of the learns actions is measured through the notion of regret. For a time step $T$ this measures the difference between the cumulative losses the learner has observed from realized actions and the loss the learner could have observed by playing the best fixed action. The goal of the learner is to minimize regret:
 
 ```math
-\R_T = \sum_{τ=1}^T f_τ(i_τ)- \min_{i^*\in[K]} \sum_{τ=1}^T f_t(i^*)
+\R_T = \sum_{τ=1}^T f_τ(i_τ)- \min_{i^*\in[K]} \sum_{τ=1}^T f_τ(i^*)
 ```
 
 The OCO settings listed above study the trade-off between exploration and exploitation. In particular, at each time step $t$ actions can be thought of as associating to two key outputs; the loss suffered (reward gained) and feedback received about the action by having taken that action. Thus, to minimize regret the learner must devise a strategy balancing gaining information for future exploitation and exploiting his learning's.
