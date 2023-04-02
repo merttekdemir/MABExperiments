@@ -25,7 +25,7 @@ In general, the multi-arm bandit problem is part of a broader learning model cal
 In each round $τ=1,\ldots,T$:
 
 1. Learner selects $i_τ \in A$
-2. The adversary picks a convex loss function $f_τ: A \rightarrow mathbb{R}$
+2. The adversary picks a convex loss function $f_τ: A \rightarrow \mathcal{R}$
 3. The player suffers loss $f_t(i_t)$ and observes some information about $f_t$
 
 
