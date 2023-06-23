@@ -74,6 +74,3 @@ The script to launch an experiment can be found in `"src/MABExperiments.jl"`. Gi
 
 ### Plotting
 The plotting functionality is handled by `"src/MABPlots.jl"`. Given the results of an Experiment the script handles plotting time series and histograms of some of the game's attributes. The outputs of the plots may be saved in a path specified in the configuration file or displayed directly.
-
-## Basic Usage
-The repository is meant to be used to test the performance of the algorithms in `"src/OnlineLearningAlgorithms.jl"` on a given set of stochastic arms. To run an experiment 
