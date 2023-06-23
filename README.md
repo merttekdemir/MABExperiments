@@ -51,7 +51,7 @@ In studying such OCO problems the goal is to design an online decision making al
 \mathcal{R}_T = \sum_{τ=1}^T f_τ(i_τ)- \min_{i^*\in[K]} \sum_{τ=1}^T f_τ(i^*)
 ```
 
-The OCO settings listed above study the trade-off between exploration and exploitation. In particular, at each time step $t$ actions can be thought of as associating to two key outputs; the loss suffered (reward gained) and feedback received about the action by having taken that action. Thus, to minimize regret the learner must devise a strategy balancing gaining information for future exploitation and exploiting his learning's.
+The OCO settings listed above study the trade-off between exploration and exploitation. In particular, at each time step $τ$ actions can be thought of as associating to two key outputs; the loss suffered (reward gained) and feedback received about the action by having taken that action. Thus, to minimize regret the learner must devise a strategy balancing gaining information for future exploitation and exploiting his learning's. The simulations in this repository allows you to plot different types of OCO algorithms against different types of benchmarks. 
 ## Repository Overview
 
 ### Multi-Armed Bandit Game
